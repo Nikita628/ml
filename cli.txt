@@ -1,0 +1,3 @@
+on each terminal session, need to activate the virt env
+source venv/bin/activate  # On Linux/Mac
+.\venv\Scripts\activate    # On Windows
