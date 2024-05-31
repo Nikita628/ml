@@ -1,0 +1,138 @@
+
+atr mult
+
+sequence length = 7
+future candles = 5
+percentage increase = 5.0
+atr length = 3
+atr multiple = 0.2
+accuracy = 0.6865869853917662
+
+classification report:
+              precision    recall  f1-score   support
+
+           0       0.59      0.05      0.09       479
+           1       0.69      0.98      0.81      1027
+
+    accuracy                           0.69      1506
+   macro avg       0.64      0.52      0.45      1506
+weighted avg       0.66      0.69      0.58      1506
+
+
+def add_features(dfs: List[pd.DataFrame]) -> List[pd.DataFrame]:
+    dfs_with_tech_indicators = []
+
+    for df in dfs:
+        new_columns = {}
+
+        # tech indicators
+        for length in sma_lengths:
+            new_columns[f'SMA_{length}'] = ta.sma(df['close'], length=length)
+
+        for length in ema_lengths:
+            new_columns[f'EMA_{length}'] = ta.ema(df['close'], length=length)
+
+        for length in rsi_lengths:
+            new_columns[f'RSI_{length}'] = ta.rsi(df['close'], length=length)
+
+        for length in atr_lengths:
+            atr = ta.atr(df['high'], df['low'], df['close'], length=length)
+            new_columns[f'ATR_{length}_pct'] = (atr / df['close'])
+
+        for length in mfi_lengths:
+            new_columns[f'MFI_{length}'] = ta.mfi(df['high'], df['low'], df['close'], df['volume'], length=length)
+
+        for length in stoch_lengths:
+            for d in stoch_ds:
+                stoch = ta.stoch(df['high'], df['low'], df['close'], k=length, d=d)
+                new_columns[f'STOCHk_{length}_{d}'] = stoch[f'STOCHk_{length}_{d}_3']
+                new_columns[f'STOCHd_{length}_{d}'] = stoch[f'STOCHd_{length}_{d}_3']
+        
+        for length in adx_lengths:
+            adx = ta.adx(df['high'], df['low'], df['close'], length=length)
+            new_columns[f'ADX_{length}'] = adx[f'ADX_{length}']
+            new_columns[f'DMP_{length}'] = adx[f'DMP_{length}']
+            new_columns[f'DMN_{length}'] = adx[f'DMN_{length}']
+
+        # custom features
+        for length in std_lengths:
+            new_columns[f'STD_{length}'] = df['close'].rolling(window=length).std()
+
+        new_columns['close_pct_change'] = df['close'].pct_change(periods=1)
+        new_columns['volume_pct_change'] = df['volume'].pct_change(periods=1)
+        new_columns['pct_diff_close_open'] = ((df['close'] - df['open']) / df['open'])
+        new_columns['pct_diff_close_high'] = ((df['close'] - df['high']) / df['high'])
+        new_columns['pct_diff_close_low'] = ((df['close'] - df['low']) / df['low'])
+
+        for length in sma_lengths:
+            new_columns[f'pct_diff_close_SMA_{length}'] = ((df['close'] - new_columns[f'SMA_{length}']) / new_columns[f'SMA_{length}'])
+
+        for length in ema_lengths:
+            new_columns[f'pct_diff_close_EMA_{length}'] = ((df['close'] - new_columns[f'EMA_{length}']) / new_columns[f'EMA_{length}'])
+
+        new_columns_df = pd.DataFrame(new_columns)
+
+        dependent_columns = {}
+        # for length in sma_lengths:
+        #     dependent_columns[f'SMA_{length}_slope'] = (new_columns_df[f'SMA_{length}'] > new_columns_df[f'SMA_{length}'].shift(1)).astype(int)
+        #     dependent_columns[f'SMA_{length}_below_close'] = (df['close'] > new_columns_df[f'SMA_{length}']).astype(int)
+
+        # for length in ema_lengths:
+        #     dependent_columns[f'EMA_{length}_slope'] = (new_columns_df[f'EMA_{length}'] > new_columns_df[f'EMA_{length}'].shift(1)).astype(int)
+        #     dependent_columns[f'EMA_{length}_below_close'] = (df['close'] > new_columns_df[f'EMA_{length}']).astype(int)
+
+        # for length in rsi_lengths:
+        #     dependent_columns[f'RSI_{length}_slope'] = (new_columns_df[f'RSI_{length}'] > new_columns_df[f'RSI_{length}'].shift(1)).astype(int)
+
+        # for length in mfi_lengths:
+        #     dependent_columns[f'MFI_{length}_slope'] = (new_columns_df[f'MFI_{length}'] > new_columns_df[f'MFI_{length}'].shift(1)).astype(int)
+
+        # for length in stoch_lengths:
+        #     for d in stoch_ds:
+        #         dependent_columns[f'STOCHk_{length}_{d}_slope'] = (new_columns_df[f'STOCHk_{length}_{d}'] > new_columns_df[f'STOCHk_{length}_{d}'].shift(1)).astype(int)
+        #         dependent_columns[f'STOCHd_{length}_{d}_slope'] = (new_columns_df[f'STOCHd_{length}_{d}'] > new_columns_df[f'STOCHd_{length}_{d}'].shift(1)).astype(int)
+
+        # for i in range(len(sma_lengths) - 1):
+        #     dependent_columns[f'SMA_ordered_{sma_lengths[i]}_{sma_lengths[i+1]}'] = (new_columns_df[f'SMA_{sma_lengths[i]}'] > new_columns_df[f'SMA_{sma_lengths[i+1]}']).astype(int)
+        
+        # for i in range(len(ema_lengths) - 1):
+        #     dependent_columns[f'EMA_ordered_{ema_lengths[i]}_{ema_lengths[i+1]}'] = (new_columns_df[f'EMA_{ema_lengths[i]}'] > new_columns_df[f'EMA_{ema_lengths[i+1]}']).astype(int)
+
+        df_with_tech_indicators = pd.concat([df, new_columns_df, pd.DataFrame(dependent_columns)], axis=1)
+        drop_unused_columns(df_with_tech_indicators)
+        df_with_tech_indicators.dropna(inplace=True)
+        dfs_with_tech_indicators.append(df_with_tech_indicators)
+
+    return dfs_with_tech_indicators
+
+
+def create_nn_model(input_shape, model_file='lstm_model.h5'):
+    # Build or load the LSTM model.
+    if os.path.exists(model_file):
+        # Load the model if it exists.
+        model = tf.keras.models.load_model(model_file)
+    else:
+        # Build a new LSTM model.
+        # model = Sequential()
+        # model.add(Bidirectional(LSTM(units=100, return_sequences=True), input_shape=input_shape))
+        # model.add(Dropout(0.2))
+        # model.add(Bidirectional(LSTM(units=250, return_sequences=True)))
+        # model.add(Dropout(0.2))
+        # model.add(Bidirectional(LSTM(units=150)))
+        # model.add(Dropout(0.2))
+        # model.add(Dense(units=1, activation='sigmoid'))
+        # optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+        # model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+
+        model = Sequential()
+        model.add(Bidirectional(LSTM(units=200, return_sequences=True), input_shape=input_shape))
+        model.add(Dropout(0.2))
+        model.add(Bidirectional(LSTM(units=250, return_sequences=True)))
+        model.add(Dropout(0.2))
+        model.add(Bidirectional(LSTM(units=200)))
+        model.add(Dropout(0.2))
+        model.add(Dense(units=1, activation='sigmoid'))
+        optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+        model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+
