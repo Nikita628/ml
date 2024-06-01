@@ -125,6 +125,7 @@ if __name__ == '__main__':
 
 # Ideas
 #
+# increase the thrashold of the binary classifier (> 0.5 -> > 0.7)
 # train only on recent data (1000 last candles)
 # more momentum tech indicators
 # explore shorter timeframes
