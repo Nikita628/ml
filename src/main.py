@@ -92,8 +92,9 @@ def prepare_model(
 
 features_config = FeaturesConfig()
 training_data_config = TrainingDataConfig(
-    sequence_length=10,
-    future_candles_count=5,
+    sequence_length=30,
+    future_candles_count=15,
+    pct_increase=5.0,
 )
 
 if __name__ == '__main__':
@@ -101,14 +102,20 @@ if __name__ == '__main__':
         model_run = sys.argv[1]
         print(f'starting model run: {model_run}')
         prepare_model(
-            data_path='datasets_12h/large',
-            unseen_path='datasets_12h/unseen',
+            data_path='src/datasets_12h/small',
+            unseen_path='src/datasets_12h/unseen',
             features_config=features_config,
             training_data_config=training_data_config,
             report_title=model_run
         )
     else:
-        print("usage: 'python main.py model-run-title'")
+        prepare_model(
+            data_path='src/datasets_12h/small',
+            unseen_path='src/datasets_12h/unseen',
+            features_config=features_config,
+            training_data_config=training_data_config,
+            report_title='12h small'
+        )
 
 
 # Imbalanced Dataset: 
@@ -126,6 +133,8 @@ if __name__ == '__main__':
 # Ideas
 #
 # increase the thrashold of the binary classifier (> 0.5 -> > 0.7)
+# multiclass classifier - increase 5% -> class 1, increase 10% -> class 2, etc.
+# regression ? predict percentage change ?
 # train only on recent data (1000 last candles)
 # more momentum tech indicators
 # explore shorter timeframes
