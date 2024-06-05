@@ -3,31 +3,48 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-# Update package lists and install system dependencies
-echo "Updating package lists..."
-sudo apt update
+# Variables
+MINICONDA_INSTALLER="Miniconda3-latest-Linux-x86_64.sh"
+MINICONDA_URL="https://repo.anaconda.com/miniconda/$MINICONDA_INSTALLER"
+ENV_NAME="myenv"
+PYTHON_VERSION="3.11"
 
-echo "Installing system dependencies..."
-sudo apt install -y build-essential libssl-dev libffi-dev python3-dev \
-                    libatlas-base-dev gfortran libhdf5-dev libc-ares-dev libeigen3-dev \
-                    python3-pip python3-venv
+# Download Miniconda installer
+echo "Downloading Miniconda installer..."
+wget $MINICONDA_URL -O $MINICONDA_INSTALLER
 
-# Clone the repository (only if not already done)
-# Uncomment and modify the following lines if you haven't cloned the repo yet
-# echo "Cloning the repository..."
-# git clone <your-repo-url>
-# cd your-project-directory
+# Install Miniconda
+echo "Installing Miniconda..."
+bash $MINICONDA_INSTALLER -b -p $HOME/miniconda
 
-# Create a virtual environment
-# echo "Creating virtual environment..."
-# python3 -m venv venv
+# Initialize Conda
+echo "Initializing Conda..."
+export PATH="$HOME/miniconda/bin:$PATH"
+source $HOME/miniconda/etc/profile.d/conda.sh
+conda init
 
-# Activate the virtual environment
-# echo "Activating virtual environment..."
-# source venv/bin/activate
+# Check if conda is available
+if ! command -v conda &> /dev/null
+then
+    echo "conda could not be found"
+    exit 1
+fi
 
-# Install Python dependencies using requirements.txt
-echo "Installing Python dependencies..."
-pip install -r requirements.txt
+# Create Conda environment
+echo "Creating Conda environment..."
+conda create -n $ENV_NAME python=$PYTHON_VERSION -y
 
-echo "Setup complete. Your environment is ready."
+# Activate the environment
+echo "Activating the Conda environment..."
+source activate $ENV_NAME
+
+# Install packages
+echo "Installing required packages..."
+conda install -c conda-forge keras-tuner pandas-ta scikit-learn numpy pandas tensorflow matplotlib -y
+pip install ccxt
+
+# Cleanup
+echo "Cleaning up..."
+rm $MINICONDA_INSTALLER
+
+echo "Setup completed successfully. To activate the environment, run 'conda activate $ENV_NAME'."

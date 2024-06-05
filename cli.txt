@@ -3,7 +3,11 @@ cd your-project-directory
 chmod +x setup.sh
 ./setup.sh
 
-
 on each terminal session, need to activate the virt env
 source venv/bin/activate  # On Linux/Mac
 .\venv\Scripts\activate    # On Windows
+
+screen -S mysession
+ctrl-a-d - detach
+screen -ls
+screen -r mysession
