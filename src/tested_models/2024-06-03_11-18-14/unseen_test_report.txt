@@ -1,0 +1,60 @@
+DODO_USDT.csv
+accuracy=0.6629160806375997
+              precision    recall  f1-score   support
+
+           0       0.27      0.31      0.28       468
+           1       0.80      0.76      0.78      1665
+
+    accuracy                           0.66      2133
+   macro avg       0.53      0.53      0.53      2133
+weighted avg       0.68      0.66      0.67      2133
+
+
+KAVA_USDT.csv
+accuracy=0.6957082929977412
+              precision    recall  f1-score   support
+
+           0       0.26      0.25      0.26       651
+           1       0.80      0.81      0.81      2448
+
+    accuracy                           0.70      3099
+   macro avg       0.53      0.53      0.53      3099
+weighted avg       0.69      0.70      0.69      3099
+
+
+RDNT_USDT.csv
+accuracy=0.6605042016806723
+              precision    recall  f1-score   support
+
+           0       0.33      0.24      0.28       161
+           1       0.74      0.82      0.78       434
+
+    accuracy                           0.66       595
+   macro avg       0.54      0.53      0.53       595
+weighted avg       0.63      0.66      0.64       595
+
+
+REQ_USDT.csv
+accuracy=0.6459276018099548
+              precision    recall  f1-score   support
+
+           0       0.32      0.41      0.36       424
+           1       0.80      0.72      0.76      1344
+
+    accuracy                           0.65      1768
+   macro avg       0.56      0.57      0.56      1768
+weighted avg       0.68      0.65      0.66      1768
+
+
+SXP_USDT.csv
+accuracy=0.66953125
+              precision    recall  f1-score   support
+
+           0       0.25      0.20      0.23       607
+           1       0.77      0.81      0.79      1953
+
+    accuracy                           0.67      2560
+   macro avg       0.51      0.51      0.51      2560
+weighted avg       0.65      0.67      0.66      2560
+
+
