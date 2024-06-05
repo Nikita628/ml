@@ -16,7 +16,7 @@ from data_preparation import (
 from utils import NON_FEATURE_COLUMNS
 import numpy as np
 
-dataframes = load_data('src/datasets_12h/small')
+dataframes = load_data('src/datasets_1d/large')
 
 features_config = FeaturesConfig()
 dataframes = add_features(dataframes, features_config)
@@ -24,9 +24,9 @@ dataframes = add_features(dataframes, features_config)
 feature_columns = [col for col in dataframes[0].columns if col not in NON_FEATURE_COLUMNS]
 
 training_data_config = TrainingDataConfig(
-    sequence_length=30,
-    future_candles_count=15,
-    pct_increase=5.0,
+    sequence_length=10,
+    future_candles_count=10,
+    pct_increase=5,
 )
 
 sequences, labels, combined_data = create_training_data(

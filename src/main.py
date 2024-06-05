@@ -15,6 +15,7 @@ from evaluation import (
 from data_preparation import (
     FeaturesConfig, 
     TrainingDataConfig,
+    calculate_label_percentages,
     load_data,
     add_features,
     create_training_data,
@@ -32,8 +33,8 @@ def prepare_model(
     ):
     
     model_dir = format_date(datetime.now())
-    model_path = f'tested_models/{model_dir}'
-    os.makedirs(model_path, exist_ok=True)
+    model_dir_path = f'src/tested_models/{model_dir}'
+    os.makedirs(model_dir_path, exist_ok=True)
 
     # data preprocessing
     dataframes = load_data(data_path)
@@ -41,10 +42,11 @@ def prepare_model(
 
     feature_columns = [col for col in dataframes[0].columns if col not in NON_FEATURE_COLUMNS]
     
+    scaler_path = f'{model_dir_path}/scaler.pkl'
     scaler = create_scaler(
         dfs=dataframes, 
         columns_to_normalize=feature_columns, 
-        scaler_path=f'{model_path}/scaler.pkl'
+        scaler_path=scaler_path
     )
 
     dataframes = normalize_data(
@@ -59,13 +61,16 @@ def prepare_model(
         config=training_data_config
     )
 
+    label_percentages = calculate_label_percentages(labels=labels)
+
     # modeling
     input_shape = (training_data_config.sequence_length, len(feature_columns))
     model = create_model(input_shape=input_shape)
 
     X_train, X_test, y_train, y_test = train_test_split(sequences, labels, test_size=0.2, random_state=42)
     model = train_model(model=model, x_train=X_train, y_train=y_train)
-    model.save(f'{model_path}/model.h5')
+    model_path = f'{model_dir_path}/model.h5'
+    model.save(model_path)
 
     # evaluation
     accuracy, report, y_pred = test_model(model=model, x_test=X_test, y_test=y_test)
@@ -73,17 +78,18 @@ def prepare_model(
     write_test_report(
         title=report_title,
         accuracy=accuracy,
+        label_percentages=label_percentages,
         classification_report=report,
         features_config=features_config,
         training_data_config=training_data_config,
-        report_path=f'{model_path}/test_report.txt'
+        report_path=f'{model_dir_path}/test_report.txt'
     )
 
     test_model_on_unseen_data(
-        model=model, 
-        scaler=scaler, 
+        model_path=model_path, 
+        scaler_path=scaler_path, 
         unseen_path=unseen_path,
-        report_path=f'{model_path}',
+        report_path=f'{model_dir_path}',
         features_config=features_config,
         training_data_config=training_data_config
     )
@@ -92,9 +98,9 @@ def prepare_model(
 
 features_config = FeaturesConfig()
 training_data_config = TrainingDataConfig(
-    sequence_length=30,
-    future_candles_count=15,
-    pct_increase=5.0,
+    sequence_length=3,
+    future_candles_count=3,
+    pct_increase=2,
 )
 
 if __name__ == '__main__':
@@ -102,7 +108,7 @@ if __name__ == '__main__':
         model_run = sys.argv[1]
         print(f'starting model run: {model_run}')
         prepare_model(
-            data_path='src/datasets_12h/small',
+            data_path='src/datasets_12h/prediction',
             unseen_path='src/datasets_12h/unseen',
             features_config=features_config,
             training_data_config=training_data_config,
@@ -110,11 +116,11 @@ if __name__ == '__main__':
         )
     else:
         prepare_model(
-            data_path='src/datasets_12h/small',
-            unseen_path='src/datasets_12h/unseen',
+            data_path='src/datasets_1d/small',
+            unseen_path='src/datasets_1d/unseen',
             features_config=features_config,
             training_data_config=training_data_config,
-            report_title='12h small'
+            report_title='1d small'
         )
 
 

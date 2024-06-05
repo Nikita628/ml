@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Any
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 import os
@@ -6,6 +6,15 @@ import pickle
 import pandas_ta as ta
 from utils import PredictionType
 from numpy import ndarray
+from collections import Counter
+
+def calculate_label_percentages(labels) -> dict[Any, float]:
+    total_count = len(labels)
+    label_counts = Counter(labels)
+    label_percentages = {label: (count / total_count) * 100 for label, count in label_counts.items()}
+    
+    return label_percentages
+
 
 REQUIRED_COLUMNS = ['timestamp', 'open', 'close', 'high', 'low', 'volume']
 
@@ -275,12 +284,14 @@ def create_training_data_atr_percentage_increase(
             future_closes = df['close'].iloc[i+sequence_length:i+sequence_length+future_candles]
             current_close = df['close'].iloc[i+sequence_length-1]
             current_atr = df[f'ATR_label_{atr_length}'].iloc[i+sequence_length-1]
-            label = int((future_closes > current_close + atr_multiple * current_atr).any())
+            increased_close = current_close + atr_multiple * current_atr
+            label = int((future_closes > increased_close).any())
             sequences.append(sequence)
             labels.append(label)
-            start_date = df['timestamp'].iloc[i]
-            end_date = df['timestamp'].iloc[i + sequence_length - 1]
-            combined_row = [start_date, end_date] + sequence.flatten().tolist() + [label]
+            sequence_start_date = df['timestamp'].iloc[i]
+            sequence_end_date = df['timestamp'].iloc[i + sequence_length - 1]
+            prediction_end_date = df['timestamp'].iloc[i + sequence_length + future_candles - 1]
+            combined_row = [sequence_start_date, sequence_end_date, prediction_end_date] + sequence.flatten().tolist() + [label]
             combined_data.append(combined_row)
         df.drop(columns=[f'ATR_label_{atr_length}'], inplace=True)
        
@@ -304,12 +315,14 @@ def create_training_data_percentage_increase(
             sequence = df[feature_columns].iloc[i:i+sequence_length].values
             future_closes = df['close'].iloc[i+sequence_length:i+sequence_length+future_candles]
             current_close = df['close'].iloc[i+sequence_length-1]
-            label = int((future_closes > current_close * (1 + percentage_increase / 100)).any())
+            increased_close = current_close * (1 + percentage_increase / 100)
+            label = int((future_closes > increased_close).any())
             sequences.append(sequence)
             labels.append(label)
-            start_date = df['timestamp'].iloc[i]
-            end_date = df['timestamp'].iloc[i + sequence_length - 1]
-            combined_row = [start_date, end_date] + sequence.flatten().tolist() + [label]
+            sequence_start_date = df['timestamp'].iloc[i]
+            sequence_end_date = df['timestamp'].iloc[i + sequence_length - 1]
+            prediction_end_date = df['timestamp'].iloc[i + sequence_length + future_candles - 1]
+            combined_row = [sequence_start_date, sequence_end_date, prediction_end_date] + sequence.flatten().tolist() + [label]
             combined_data.append(combined_row)
      
     return sequences, labels, combined_data
@@ -331,9 +344,10 @@ def create_training_data_next_close_direction(
             label = int(df['close'].iloc[i+sequence_length] > df['close'].iloc[i+sequence_length-1])
             sequences.append(sequence)
             labels.append(label)
-            start_date = df['timestamp'].iloc[i]
-            end_date = df['timestamp'].iloc[i + sequence_length - 1]
-            combined_row = [start_date, end_date] + sequence.flatten().tolist() + [label]
+            sequence_start_date = df['timestamp'].iloc[i]
+            sequence_end_date = df['timestamp'].iloc[i + sequence_length - 1]
+            prediction_end_date = df['timestamp'].iloc[i + sequence_length]
+            combined_row = [sequence_start_date, sequence_end_date, prediction_end_date] + sequence.flatten().tolist() + [label]
             combined_data.append(combined_row)
   
     return sequences, labels, combined_data

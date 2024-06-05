@@ -1,12 +1,13 @@
+import os
 import numpy as np
 from keras.models import Sequential
 from keras.layers import LSTM, Dense, Dropout, Bidirectional
 from sklearn.metrics import accuracy_score, classification_report
 import tensorflow as tf
-import pandas_ta as ta
 from keras.callbacks import EarlyStopping
 from sklearn.model_selection import KFold
 import keras_tuner as kt
+import keras as k
 
 def create_model(input_shape):
     # model = Sequential()
@@ -32,6 +33,13 @@ def create_model(input_shape):
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
     model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
     return model
+
+
+def load_model(model_path='model.h5'):
+    if os.path.exists(model_path):
+        return k.models.load_model(model_path)
+    else:
+        raise Exception(f'{model_path} does not exist')
 
 
 def train_model(model, x_train, y_train, epochs=100, batch_size=32):
