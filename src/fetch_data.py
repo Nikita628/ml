@@ -40,7 +40,7 @@ def fetch_all_klines(timeframe, since, only, limit=1000):
 
 length = 3000
 only = []
-timeframe = '1d'  # 1-day intervals
+timeframe = '4h'  # 1-day intervals
 since = exchange.parse8601((datetime.now() - timedelta(days=length)).isoformat())
 
 # Fetch and store kline data for eligible USDT trading pairs

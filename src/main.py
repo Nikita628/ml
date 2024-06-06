@@ -98,8 +98,8 @@ def prepare_model(
 
 features_config = FeaturesConfig()
 training_data_config = TrainingDataConfig(
-    sequence_length=3,
-    future_candles_count=3,
+    sequence_length=2,
+    future_candles_count=2,
     pct_increase=2,
 )
 
@@ -108,19 +108,19 @@ if __name__ == '__main__':
         model_run = sys.argv[1]
         print(f'starting model run: {model_run}')
         prepare_model(
-            data_path='src/datasets_12h/prediction',
-            unseen_path='src/datasets_12h/unseen',
+            data_path='src/datasets_4h/small',
+            unseen_path='src/datasets_4h/unseen',
             features_config=features_config,
             training_data_config=training_data_config,
             report_title=model_run
         )
     else:
         prepare_model(
-            data_path='src/datasets_1d/small',
-            unseen_path='src/datasets_1d/unseen',
+            data_path='src/datasets_4h/small',
+            unseen_path='src/datasets_4h/unseen',
             features_config=features_config,
             training_data_config=training_data_config,
-            report_title='1d small'
+            report_title='4h small'
         )
 
 
