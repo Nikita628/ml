@@ -39,7 +39,7 @@ def load_data(directory_path: str, min_len=500) -> List[pd.DataFrame]:
 class FeaturesConfig:
     def __init__(
             self,
-            sma_lengths=[10, 20, 50, 100, 200],
+            sma_lengths=[5, 10, 20, 50, 100, 200],
             ema_lengths=[3, 9, 12, 21, 30, 50, 100, 200],
             rsi_lengths=[2, 5, 7, 10, 14, 20, 30],
             # k, d, smooth
