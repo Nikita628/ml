@@ -27,7 +27,6 @@ from data_preparation import (
 def prepare_model(
         data_path: str,
         unseen_path: str,
-        report_title: str,
         features_config: FeaturesConfig, 
         training_data_config: TrainingDataConfig
     ):
@@ -62,6 +61,7 @@ def prepare_model(
     )
 
     label_percentages = calculate_label_percentages(labels=labels)
+    print(f'label percentages:\n{label_percentages}')
 
     # modeling
     input_shape = (training_data_config.sequence_length, len(feature_columns))
@@ -76,7 +76,7 @@ def prepare_model(
     accuracy, report, y_pred = test_model(model=model, x_test=X_test, y_test=y_test)
 
     write_test_report(
-        title=report_title,
+        title=f'data_path={data_path}\nunseen_path={unseen_path}',
         accuracy=accuracy,
         label_percentages=label_percentages,
         classification_report=report,
@@ -100,27 +100,23 @@ features_config = FeaturesConfig()
 training_data_config = TrainingDataConfig(
     sequence_length=2,
     future_candles_count=2,
-    pct_increase=2,
+    pct_increase=1,
 )
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        model_run = sys.argv[1]
-        print(f'starting model run: {model_run}')
         prepare_model(
             data_path='src/datasets_4h/small',
             unseen_path='src/datasets_4h/unseen',
             features_config=features_config,
             training_data_config=training_data_config,
-            report_title=model_run
         )
     else:
         prepare_model(
-            data_path='src/datasets_4h/small',
-            unseen_path='src/datasets_4h/unseen',
+            data_path='src/datasets_12h/small',
+            unseen_path='src/datasets_12h/unseen',
             features_config=features_config,
             training_data_config=training_data_config,
-            report_title='4h small'
         )
 
 

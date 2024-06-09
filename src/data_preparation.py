@@ -39,15 +39,22 @@ def load_data(directory_path: str, min_len=500) -> List[pd.DataFrame]:
 class FeaturesConfig:
     def __init__(
             self,
-            sma_lengths=[2, 5, 10, 20, 50, 100, 200],
-            ema_lengths=[2, 5, 10, 20, 50],
-            rsi_lengths=[2, 5, 10, 15, 20],
-            stoch_lengths=[2, 5, 10, 15, 20],
-            stoch_d_lengths=[3, 5, 7, 9],
-            mfi_lengths=[2, 5, 10, 15, 20],
-            adx_lengths=[2, 5, 10, 15, 20],
-            atr_lengths=[2, 5, 10, 15, 20],
-            std_lengths=[2, 5, 10, 15, 20],
+            sma_lengths=[10, 20, 50, 100, 200],
+            ema_lengths=[3, 9, 12, 21, 30, 50, 100, 200],
+            rsi_lengths=[2, 5, 7, 10, 14, 20, 30],
+            # k, d, smooth
+            stoch_lengths=[
+                # Short-Term Settings
+                (5, 3, 3), (7, 3, 3),
+                # Medium-Term Settings
+                (9, 3, 3), (14, 3, 3),
+                # Long-Term Settings
+                (21, 3, 3), (21, 7, 7),
+            ],
+            mfi_lengths=[2, 5, 10, 14, 21],
+            adx_lengths=[3, 7, 10, 14, 20],
+            atr_lengths=[3, 7, 10, 14, 20],
+            std_lengths=[3, 7, 10, 14, 20],
             is_pct=True,
             is_slopes=False,
             is_order=False,
@@ -56,7 +63,6 @@ class FeaturesConfig:
         self.ema_lengths = ema_lengths
         self.rsi_lengths = rsi_lengths
         self.stoch_lengths = stoch_lengths
-        self.stoch_ds = stoch_d_lengths
         self.mfi_lengths = mfi_lengths
         self.adx_lengths = adx_lengths
         self.atr_lengths = atr_lengths
@@ -72,7 +78,6 @@ class FeaturesConfig:
             f"  ema_lengths={self.ema_lengths},\n"
             f"  rsi_lengths={self.rsi_lengths},\n"
             f"  stoch_lengths={self.stoch_lengths},\n"
-            f"  stoch_ds={self.stoch_ds},\n"
             f"  mfi_lengths={self.mfi_lengths},\n"
             f"  adx_lengths={self.adx_lengths},\n"
             f"  atr_lengths={self.atr_lengths},\n"
@@ -107,11 +112,10 @@ def add_features(dfs: List[pd.DataFrame], config: FeaturesConfig) -> List[pd.Dat
         for length in config.mfi_lengths:
             new_columns[f'MFI_{length}'] = ta.mfi(df['high'], df['low'], df['close'], df['volume'], length=length)
 
-        for length in config.stoch_lengths:
-            for d in config.stoch_ds:
-                stoch = ta.stoch(df['high'], df['low'], df['close'], k=length, d=d)
-                new_columns[f'STOCHk_{length}_{d}'] = stoch[f'STOCHk_{length}_{d}_3']
-                new_columns[f'STOCHd_{length}_{d}'] = stoch[f'STOCHd_{length}_{d}_3']
+        for k, d, smooth in config.stoch_lengths:
+            stoch = ta.stoch(df['high'], df['low'], df['close'], k=k, d=d, smooth_k=smooth)
+            new_columns[f'STOCHk_{k}_{d}_{smooth}'] = stoch[f'STOCHk_{k}_{d}_{smooth}']
+            new_columns[f'STOCHd_{k}_{d}_{smooth}'] = stoch[f'STOCHd_{k}_{d}_{smooth}']
         
         for length in config.adx_lengths:
             adx = ta.adx(df['high'], df['low'], df['close'], length=length)
@@ -121,18 +125,21 @@ def add_features(dfs: List[pd.DataFrame], config: FeaturesConfig) -> List[pd.Dat
 
         # custom features
         for length in config.std_lengths:
-            new_columns[f'STD_{length}'] = df['close'].rolling(window=length).std()
+            new_columns[f'variation_{length}'] = df['close'].rolling(window=length).std() / df['close'].rolling(window=length).mean()
 
         if config.is_pct:
-            new_columns['close_pct_change'] = df['close'].pct_change(periods=1)
-            new_columns['volume_pct_change'] = df['volume'].pct_change(periods=1)
-            new_columns['pct_diff_close_open'] = ((df['close'] - df['open']) / df['open'])
-            new_columns['pct_diff_close_high'] = ((df['close'] - df['high']) / df['high'])
-            new_columns['pct_diff_close_low'] = ((df['close'] - df['low']) / df['low'])
+            new_columns['close_pct_change'] = df['close'].pct_change()
+            new_columns['high_pct_change'] = df['high'].pct_change()
+            new_columns['low_pct_change'] = df['low'].pct_change()
+            new_columns['open_pct_change'] = df['open'].pct_change()
+            new_columns['volume_pct_change'] = df['volume'].pct_change()
+            new_columns['ratio_open_close'] = df['open'] / df['close']
+            new_columns['ratio_high_close'] = df['high'] / df['close']
+            new_columns['ratio_low_close'] = df['low'] / df['close']
             for length in config.sma_lengths:
-                new_columns[f'pct_diff_close_SMA_{length}'] = ((df['close'] - new_columns[f'SMA_{length}']) / new_columns[f'SMA_{length}'])
+                new_columns[f'ratio_SMA_{length}_close'] = new_columns[f'SMA_{length}'] / df['close']
             for length in config.ema_lengths:
-                new_columns[f'pct_diff_close_EMA_{length}'] = ((df['close'] - new_columns[f'EMA_{length}']) / new_columns[f'EMA_{length}'])
+                new_columns[f'ratio_EMA_{length}_close'] = new_columns[f'EMA_{length}'] / df['close']
 
         new_columns_df = pd.DataFrame(new_columns)
 
