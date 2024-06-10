@@ -241,7 +241,8 @@ class TrainingDataConfig:
 def create_training_data(
         dfs: List[pd.DataFrame], 
         feature_columns: List[str], 
-        config: TrainingDataConfig, 
+        config: TrainingDataConfig,
+        collect_combined_data: bool = False,
     ) -> tuple[List[ndarray], List[int], List]:
 
     if config.prediction_type == PredictionType.atr_mult:
@@ -252,12 +253,14 @@ def create_training_data(
             atr_multiple=config.atr_multiple,
             atr_length=config.atr_length,
             future_candles=config.future_candles_count,
+            collect_combined_data=collect_combined_data,
         )
     elif config.prediction_type == PredictionType.next_close_direction:
         return create_training_data_next_close_direction(
             dfs=dfs,
             feature_columns=feature_columns,
             sequence_length=config.sequence_length,
+            collect_combined_data=collect_combined_data,
         )
     elif config.prediction_type == PredictionType.pct_increase:
         return create_training_data_percentage_increase(
@@ -266,6 +269,7 @@ def create_training_data(
             future_candles=config.future_candles_count,
             percentage_increase=config.pct_increase,
             sequence_length=config.sequence_length,
+            collect_combined_data=collect_combined_data,
         )
     
     raise Exception(f'Invalid prediction type {config.prediction_type}')
@@ -277,7 +281,8 @@ def create_training_data_atr_percentage_increase(
         sequence_length=5, 
         future_candles=3,
         atr_multiple=1.0,
-        atr_length=14
+        atr_length=14,
+        collect_combined_data: bool = False,
     ) -> tuple[List[ndarray], List[int], List]:
 
     sequences = []
@@ -298,8 +303,9 @@ def create_training_data_atr_percentage_increase(
             sequence_start_date = df['timestamp'].iloc[i]
             sequence_end_date = df['timestamp'].iloc[i + sequence_length - 1]
             prediction_end_date = df['timestamp'].iloc[i + sequence_length + future_candles - 1]
-            combined_row = [sequence_start_date, sequence_end_date, prediction_end_date] + sequence.flatten().tolist() + [label]
-            combined_data.append(combined_row)
+            if collect_combined_data:
+                combined_row = [sequence_start_date, sequence_end_date, prediction_end_date] + sequence.flatten().tolist() + [label]
+                combined_data.append(combined_row)
         df.drop(columns=[f'ATR_label_{atr_length}'], inplace=True)
        
     return sequences, labels, combined_data
@@ -310,7 +316,8 @@ def create_training_data_percentage_increase(
         sequence_length: int, 
         feature_columns: List[str], 
         future_candles=3, 
-        percentage_increase=1.0
+        percentage_increase=1.0,
+        collect_combined_data: bool = False,
     ) -> tuple[List[ndarray], List[int], List]:
 
     sequences = []
@@ -329,8 +336,9 @@ def create_training_data_percentage_increase(
             sequence_start_date = df['timestamp'].iloc[i]
             sequence_end_date = df['timestamp'].iloc[i + sequence_length - 1]
             prediction_end_date = df['timestamp'].iloc[i + sequence_length + future_candles - 1]
-            combined_row = [sequence_start_date, sequence_end_date, prediction_end_date] + sequence.flatten().tolist() + [label]
-            combined_data.append(combined_row)
+            if collect_combined_data:
+                combined_row = [sequence_start_date, sequence_end_date, prediction_end_date] + sequence.flatten().tolist() + [label]
+                combined_data.append(combined_row)
      
     return sequences, labels, combined_data
 
@@ -338,7 +346,8 @@ def create_training_data_percentage_increase(
 def create_training_data_next_close_direction(
         dfs: List[pd.DataFrame], 
         sequence_length: int, 
-        feature_columns: List[str]
+        feature_columns: List[str],
+        collect_combined_data: bool = False,
     ) -> tuple[List[ndarray], List[int], List]:
 
     sequences = []
@@ -354,8 +363,9 @@ def create_training_data_next_close_direction(
             sequence_start_date = df['timestamp'].iloc[i]
             sequence_end_date = df['timestamp'].iloc[i + sequence_length - 1]
             prediction_end_date = df['timestamp'].iloc[i + sequence_length]
-            combined_row = [sequence_start_date, sequence_end_date, prediction_end_date] + sequence.flatten().tolist() + [label]
-            combined_data.append(combined_row)
+            if collect_combined_data:
+                combined_row = [sequence_start_date, sequence_end_date, prediction_end_date] + sequence.flatten().tolist() + [label]
+                combined_data.append(combined_row)
   
     return sequences, labels, combined_data
  

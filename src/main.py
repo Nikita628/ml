@@ -3,14 +3,18 @@ import os
 import sys
 from sklearn.model_selection import train_test_split
 from utils import NON_FEATURE_COLUMNS, format_date
+import numpy as np
+from sklearn.metrics import accuracy_score, classification_report
 from modeling import (
     create_model,
     train_model,
+    save_model,
 )
 from evaluation import (
     test_model,
     test_model_on_unseen_data,
     write_test_report,
+    test_ensemble_on_unseen_data,
 )
 from data_preparation import (
     FeaturesConfig, 
@@ -54,7 +58,7 @@ def prepare_model(
         columns_to_normalize=feature_columns
     )
 
-    sequences, labels, combined_data = create_training_data(
+    sequences, labels, _ = create_training_data(
         dfs=dataframes, 
         feature_columns=feature_columns, 
         config=training_data_config
@@ -70,10 +74,10 @@ def prepare_model(
     X_train, X_test, y_train, y_test = train_test_split(sequences, labels, test_size=0.2, random_state=42)
     model = train_model(model=model, x_train=X_train, y_train=y_train)
     model_path = f'{model_dir_path}/model.h5'
-    model.save(model_path)
+    save_model(model=model, model_path=model_path)
 
     # evaluation
-    accuracy, report, y_pred = test_model(model=model, x_test=X_test, y_test=y_test)
+    accuracy, report, _ = test_model(model=model, x_test=X_test, y_test=y_test)
 
     write_test_report(
         title=f'data_path={data_path}\nunseen_path={unseen_path}',
@@ -95,6 +99,88 @@ def prepare_model(
     )
 
 
+def prepare_model_ensemble(
+        data_path: str,
+        unseen_path: str,
+        features_config: FeaturesConfig, 
+        training_data_config: TrainingDataConfig,
+        n_estimators: int = 10,
+        test_size: float = 0.2,
+        bootstrap_fraction: float = 0.8,
+        random_state: int = 42,
+    ):
+    model_dir = format_date(datetime.now())
+    model_dir_path = f'src/tested_models/{model_dir}'
+    os.makedirs(model_dir_path, exist_ok=True)
+
+    dataframes = load_data(data_path)
+    dataframes = add_features(dataframes, features_config)
+
+    feature_columns = [col for col in dataframes[0].columns if col not in NON_FEATURE_COLUMNS]
+
+    scaler_path = f'{model_dir_path}/scaler.pkl'
+    scaler = create_scaler(dfs=dataframes, columns_to_normalize=feature_columns, scaler_path=scaler_path)
+    dataframes = normalize_data(dfs=dataframes, scaler=scaler, columns_to_normalize=feature_columns)
+
+    sequences, labels, _ = create_training_data(dfs=dataframes, feature_columns=feature_columns, config=training_data_config)
+    label_percentages = calculate_label_percentages(labels=labels)
+    print(f'label percentages:\n{label_percentages}')
+
+    X_train, X_test, y_train, y_test = train_test_split(sequences, labels, test_size=test_size, random_state=random_state)
+    X_train = np.array(X_train)
+    y_train = np.array(y_train)
+
+    models = []
+    bootstrap_size = int(len(X_train) * bootstrap_fraction)
+    for i in range(n_estimators):
+        bootstrap_indices = np.random.choice(np.arange(len(X_train)), size=bootstrap_size, replace=True)
+        X_bootstrap = X_train[bootstrap_indices]
+        y_bootstrap = y_train[bootstrap_indices]
+
+        input_shape = (training_data_config.sequence_length, len(feature_columns))
+        model = create_model(input_shape)
+        model = train_model(model=model, x_train=X_bootstrap, y_train=y_bootstrap)
+        
+        model_path = os.path.join(model_dir_path, f'model_{i}.h5')
+        save_model(model, model_path)
+        models.append(model)
+
+    model_reports = []
+    for i, model in enumerate(models):
+        accuracy, report, _ = test_model(model, X_test, y_test)
+        model_reports.append((accuracy, report))
+
+    predictions = [model.predict(np.array(X_test)) for model in models]
+    ensemble_predictions = np.sum(predictions, axis=0) > (n_estimators / 2)
+    ensemble_predictions = ensemble_predictions.astype(int)
+    ensemble_accuracy = accuracy_score(np.array(y_test), ensemble_predictions)
+    ensemble_report = classification_report(np.array(y_test), ensemble_predictions)
+    
+    with open(f'{model_dir_path}/by_model_ensemble_report.txt', 'a') as file:
+        for accuracy, report in model_reports:
+            file.write(f'{accuracy}\n{report}')
+            file.write('\n\n')
+
+    write_test_report(
+        title=f'data_path={data_path}\nunseen_path={unseen_path}',
+        accuracy=ensemble_accuracy,
+        label_percentages=label_percentages,
+        classification_report=ensemble_report,
+        features_config=features_config,
+        training_data_config=training_data_config,
+        report_path=f'{model_dir_path}/test_ensemble_report.txt'
+    )
+
+    test_ensemble_on_unseen_data(
+        models=models, 
+        scaler_path=scaler_path, 
+        unseen_path=unseen_path,
+        report_path=f'{model_dir_path}',
+        features_config=features_config,
+        training_data_config=training_data_config,
+        n_estimators=n_estimators,
+    )
+
 
 features_config = FeaturesConfig()
 training_data_config = TrainingDataConfig(
@@ -112,11 +198,12 @@ if __name__ == '__main__':
             training_data_config=training_data_config,
         )
     else:
-        prepare_model(
-            data_path='src/datasets_12h/small',
-            unseen_path='src/datasets_12h/unseen',
+        prepare_model_ensemble(
+            data_path='src/datasets_1d/small',
+            unseen_path='src/datasets_1d/unseen',
             features_config=features_config,
             training_data_config=training_data_config,
+            n_estimators=2,
         )
 
 

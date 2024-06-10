@@ -9,7 +9,7 @@ from sklearn.model_selection import KFold
 import keras_tuner as kt
 import keras as k
 
-def create_model(input_shape):
+def create_model(input_shape: tuple[int, int]):
     # model = Sequential()
     # model.add(Bidirectional(LSTM(units=100, return_sequences=True), input_shape=input_shape))
     # model.add(Dropout(0.2))
@@ -48,6 +48,10 @@ def train_model(model, x_train, y_train, epochs=100, batch_size=32):
     early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
     model.fit(X, y, epochs=epochs, batch_size=batch_size, validation_split=0.1, callbacks=[early_stopping]) 
     return model
+
+
+def save_model(model, model_path='model.h5'):
+    model.save(model_path)
 
 
 def cross_validate_model(model_builder, sequences, labels, n_splits=5):

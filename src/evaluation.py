@@ -53,7 +53,8 @@ def test_model_on_unseen_data(
         sequences, labels, combined_data = create_training_data(
             dfs=[df], 
             feature_columns=feature_columns, 
-            config=training_data_config
+            config=training_data_config,
+            collect_combined_data=True,
         )
 
         accuracy, report, y_pred = test_model(model=model, x_test=sequences, y_test=labels)
@@ -74,6 +75,64 @@ def test_model_on_unseen_data(
         combined_df.to_csv(report_file, index=False)
 
     with open(f'{report_path}/unseen_test_report.txt', 'a') as file:
+        for report in reports:
+            file.write(report)
+            file.write('\n\n')
+
+
+def test_ensemble_on_unseen_data(
+        models, 
+        scaler_path: str, 
+        unseen_path: str, 
+        report_path: str, 
+        features_config: FeaturesConfig,
+        training_data_config: TrainingDataConfig,
+        n_estimators: int,
+    ):
+    scaler = load_scaler(scaler_path)
+    dataframes = load_data(unseen_path)
+    dataframes = add_features(dataframes, features_config)
+
+    feature_columns = [col for col in dataframes[0].columns if col not in NON_FEATURE_COLUMNS]
+    reports = []
+
+    for df in dataframes:
+        df = normalize_data(
+            dfs=[df], 
+            scaler=scaler, 
+            columns_to_normalize=feature_columns
+        )[0]
+
+        sequences, labels, combined_data = create_training_data(
+            dfs=[df], 
+            feature_columns=feature_columns, 
+            config=training_data_config,
+            collect_combined_data=True,
+        )
+
+        predictions = [model.predict(np.array(sequences)) for model in models]
+        ensemble_predictions = np.sum(predictions, axis=0) > (n_estimators / 2)
+        ensemble_predictions = ensemble_predictions.astype(int)
+        ensemble_accuracy = accuracy_score(np.array(labels), ensemble_predictions)
+        ensemble_report = classification_report(np.array(labels), ensemble_predictions)
+
+        tested_file = df.iloc[0]['file']
+        reports.append(f'{tested_file}\naccuracy={ensemble_accuracy}\n{ensemble_report}')
+
+        report_file = f'{report_path}/{tested_file}_unseen_test_ensemble_result.csv'
+        flattened_feature_columns = [f'feature_{j}' for j in range(training_data_config.sequence_length * len(feature_columns))]
+        columns = ['sequence_start_date', 'sequence_end_date', 'prediction_end_date'] \
+            + flattened_feature_columns \
+            + ['actual_label', 'predicted_label']
+        
+        for i, row in enumerate(combined_data):
+            row.append(ensemble_predictions[i])
+
+        combined_df = pd.DataFrame(combined_data, columns=columns)
+        combined_df.drop(columns=flattened_feature_columns, inplace=True)
+        combined_df.to_csv(report_file, index=False)
+
+    with open(f'{report_path}/unseen_test_ensemble_report.txt', 'a') as file:
         for report in reports:
             file.write(report)
             file.write('\n\n')
