@@ -7,13 +7,22 @@ import pandas_ta as ta
 from utils import PredictionType
 from numpy import ndarray
 from collections import Counter
+import random
+import numpy as np
 
-def calculate_label_percentages(labels) -> dict[Any, float]:
+def calculate_label_percentages(labels) -> dict[str, float]:
     total_count = len(labels)
     label_counts = Counter(labels)
     label_percentages = {label: (count / total_count) * 100 for label, count in label_counts.items()}
     
     return label_percentages
+
+
+def is_balanced(label_percentages: dict[str, float], threshold: float):
+    for key, value in label_percentages.items():
+        if value > threshold:
+            return False
+    return True
 
 
 REQUIRED_COLUMNS = ['timestamp', 'open', 'close', 'high', 'low', 'volume']
@@ -369,3 +378,44 @@ def create_training_data_next_close_direction(
   
     return sequences, labels, combined_data
  
+
+def balance_dataset(
+        sequences: List[np.ndarray], 
+        labels: List[int], 
+        method: str = 'downsample', 
+        max_percentage_diff: float = 0.1
+    ) -> tuple[List[np.ndarray], List[int]]:
+    # Separate the sequences and labels into different classes
+    class_0_indices = [i for i, label in enumerate(labels) if label == 0]
+    class_1_indices = [i for i, label in enumerate(labels) if label == 1]
+    
+    # Determine minority and majority classes
+    if len(class_0_indices) > len(class_1_indices):
+        majority_class_indices = class_0_indices
+        minority_class_indices = class_1_indices
+    else:
+        majority_class_indices = class_1_indices
+        minority_class_indices = class_0_indices
+    
+    # Calculate the target size for balancing
+    if method == 'downsample':
+        # Maximum allowable size for the majority class
+        max_majority_size = int(len(minority_class_indices) * (1 + max_percentage_diff))
+        if len(majority_class_indices) > max_majority_size:
+            majority_class_indices = random.sample(majority_class_indices, max_majority_size)
+    elif method == 'upsample':
+        # Target size for the minority class
+        target_minority_size = int(len(majority_class_indices) / (1 + max_percentage_diff))
+        minority_class_indices = minority_class_indices * (target_minority_size // len(minority_class_indices)) + random.choices(minority_class_indices, k=target_minority_size % len(minority_class_indices))
+    else:
+        raise ValueError("Method should be either 'downsample' or 'upsample'")
+    
+    # Combine the indices and shuffle them to mix the classes
+    balanced_indices = majority_class_indices + minority_class_indices
+    random.shuffle(balanced_indices)
+    
+    # Create balanced sequences and labels
+    balanced_sequences = [sequences[i] for i in balanced_indices]
+    balanced_labels = [labels[i] for i in balanced_indices]
+    
+    return balanced_sequences, balanced_labels

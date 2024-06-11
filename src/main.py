@@ -25,6 +25,7 @@ from data_preparation import (
     create_training_data,
     create_scaler,
     normalize_data,
+    balance_dataset,
 )
 
 
@@ -65,7 +66,7 @@ def prepare_model(
     )
 
     label_percentages = calculate_label_percentages(labels=labels)
-    print(f'label percentages:\n{label_percentages}')
+    # sequences, labels = balance_dataset(sequences=sequences, labels=labels, method='upsample')
 
     # modeling
     input_shape = (training_data_config.sequence_length, len(feature_columns))
@@ -124,7 +125,7 @@ def prepare_model_ensemble(
 
     sequences, labels, _ = create_training_data(dfs=dataframes, feature_columns=feature_columns, config=training_data_config)
     label_percentages = calculate_label_percentages(labels=labels)
-    print(f'label percentages:\n{label_percentages}')
+    # sequences, labels = balance_dataset(sequences=sequences, labels=labels)
 
     X_train, X_test, y_train, y_test = train_test_split(sequences, labels, test_size=test_size, random_state=random_state)
     X_train = np.array(X_train)
@@ -186,7 +187,7 @@ features_config = FeaturesConfig()
 training_data_config = TrainingDataConfig(
     sequence_length=2,
     future_candles_count=2,
-    pct_increase=1,
+    pct_increase=5,
 )
 
 if __name__ == '__main__':
@@ -198,12 +199,11 @@ if __name__ == '__main__':
             training_data_config=training_data_config,
         )
     else:
-        prepare_model_ensemble(
+        prepare_model(
             data_path='src/datasets_1d/small',
             unseen_path='src/datasets_1d/unseen',
             features_config=features_config,
             training_data_config=training_data_config,
-            n_estimators=2,
         )
 
 
