@@ -7,13 +7,23 @@ import pandas_ta as ta
 from utils import PredictionType
 from numpy import ndarray
 from collections import Counter
+import random
+import numpy as np
+from sklearn.preprocessing import StandardScaler
 
-def calculate_label_percentages(labels) -> dict[Any, float]:
+def calculate_label_percentages(labels) -> dict[str, float]:
     total_count = len(labels)
     label_counts = Counter(labels)
     label_percentages = {label: (count / total_count) * 100 for label, count in label_counts.items()}
     
     return label_percentages
+
+
+def is_balanced(label_percentages: dict[str, float], threshold: float):
+    for key, value in label_percentages.items():
+        if value > threshold:
+            return False
+    return True
 
 
 REQUIRED_COLUMNS = ['timestamp', 'open', 'close', 'high', 'low', 'volume']
@@ -39,22 +49,19 @@ def load_data(directory_path: str, min_len=500) -> List[pd.DataFrame]:
 class FeaturesConfig:
     def __init__(
             self,
-            sma_lengths=[5, 10, 20, 50, 100, 200],
-            ema_lengths=[3, 9, 12, 21, 30, 50, 100, 200],
-            rsi_lengths=[2, 5, 7, 10, 14, 20, 30],
-            # k, d, smooth
-            stoch_lengths=[
-                # Short-Term Settings
-                (5, 3, 3), (7, 3, 3),
-                # Medium-Term Settings
-                (9, 3, 3), (14, 3, 3),
-                # Long-Term Settings
-                (21, 3, 3), (21, 7, 7),
-            ],
-            mfi_lengths=[2, 5, 10, 14, 21],
-            adx_lengths=[3, 7, 10, 14, 20],
-            atr_lengths=[3, 7, 10, 14, 20],
-            std_lengths=[3, 7, 10, 14, 20],
+            sma_lengths=[2,5,7,10,15,20,30,50,100,200],
+            ema_lengths=[2,5,7,10,15,20,30,50,100,200],
+            rsi_lengths=[2,3,5,7,10,15,20,25,30],
+            stoch_k_lengths=[2,3,5,7,10,15,20,25,30],
+            stoch_d_lengths=[2,3,5,7,10,15,20,25,30],
+            stoch_k_smooth=[2,3,5,7,10,15,20,25,30],
+            mfi_lengths=[2,3,5,7,10,15,20,25,30],
+            adx_lengths=[2,3,5,7,10,15,20,25,30],
+            atr_lengths=[2,3,5,7,10,15,20,25,30],
+            std_lengths=[2,3,5,7,10,15,20,25,30],
+            bb_lengths=[2,3,5,7,10,15,20,25,30],
+            bb_stds=[1.5, 2.0, 3.0],
+            ichimoku=[(9, 26, 52),(5, 15, 30),(12, 24, 48),(10, 30, 60),(7, 22, 44)],
             is_pct=True,
             is_slopes=False,
             is_order=False,
@@ -62,11 +69,16 @@ class FeaturesConfig:
         self.sma_lengths = sma_lengths
         self.ema_lengths = ema_lengths
         self.rsi_lengths = rsi_lengths
-        self.stoch_lengths = stoch_lengths
+        self.stoch_k_lengths = stoch_k_lengths
+        self.stoch_d_lengths = stoch_d_lengths
+        self.stoch_k_smooth = stoch_k_smooth
         self.mfi_lengths = mfi_lengths
         self.adx_lengths = adx_lengths
         self.atr_lengths = atr_lengths
         self.std_lengths = std_lengths
+        self.bb_lengths = bb_lengths
+        self.ichimoku = ichimoku
+        self.bb_stds = bb_stds
         self.is_pct = is_pct
         self.is_slopes = is_slopes
         self.is_order = is_order
@@ -77,16 +89,30 @@ class FeaturesConfig:
             f"  sma_lengths={self.sma_lengths},\n"
             f"  ema_lengths={self.ema_lengths},\n"
             f"  rsi_lengths={self.rsi_lengths},\n"
-            f"  stoch_lengths={self.stoch_lengths},\n"
+            f"  stoch_k_lengths={self.stoch_k_lengths},\n"
+            f"  stoch_d_lengths={self.stoch_d_lengths},\n"
+            f"  stoch_k_smooth={self.stoch_k_smooth},\n"
             f"  mfi_lengths={self.mfi_lengths},\n"
             f"  adx_lengths={self.adx_lengths},\n"
             f"  atr_lengths={self.atr_lengths},\n"
             f"  std_lengths={self.std_lengths}\n"
+            f"  bb_lengths={self.bb_lengths}\n"
+            f"  ichimoku={self.ichimoku}\n"
+            f"  bb_stds={self.bb_stds}\n"
             f"  is_pct={self.is_pct}\n"
             f"  is_slopes={self.is_slopes}\n"
             f"  is_order={self.is_order}\n"
             f")"
         )
+
+
+def add_ichimoku_components(df, tenkan, kijun, senkou, new_columns):
+    ichimoku, _ = ta.ichimoku(high=df['high'], low=df['low'], close=df['close'], tenkan=tenkan, kijun=kijun, senkou=senkou)
+    new_columns[f'ratio_ISA_{tenkan}'] = ichimoku[f'ISA_{tenkan}'] / df['close']
+    new_columns[f'ratio_ISB_{kijun}'] = ichimoku[f'ISB_{kijun}'] / df['close']
+    new_columns[f'ratio_ITS_{tenkan}'] = ichimoku[f'ITS_{tenkan}'] / df['close']
+    new_columns[f'ratio_IKS_{kijun}'] = ichimoku[f'IKS_{kijun}'] / df['close']
+    new_columns[f'ratio_ICS_{kijun}'] = ichimoku[f'ICS_{kijun}'] / df['close']
 
 
 def add_features(dfs: List[pd.DataFrame], config: FeaturesConfig) -> List[pd.DataFrame]:
@@ -112,16 +138,30 @@ def add_features(dfs: List[pd.DataFrame], config: FeaturesConfig) -> List[pd.Dat
         for length in config.mfi_lengths:
             new_columns[f'MFI_{length}'] = ta.mfi(df['high'], df['low'], df['close'], df['volume'], length=length)
 
-        for k, d, smooth in config.stoch_lengths:
-            stoch = ta.stoch(df['high'], df['low'], df['close'], k=k, d=d, smooth_k=smooth)
-            new_columns[f'STOCHk_{k}_{d}_{smooth}'] = stoch[f'STOCHk_{k}_{d}_{smooth}']
-            new_columns[f'STOCHd_{k}_{d}_{smooth}'] = stoch[f'STOCHd_{k}_{d}_{smooth}']
+        for k in config.stoch_k_lengths:
+            for d in config.stoch_d_lengths:
+                for smooth in config.stoch_k_smooth:
+                    stoch = ta.stoch(df['high'], df['low'], df['close'], k=k, d=d, smooth_k=smooth)
+                    new_columns[f'STOCHk_{k}_{d}_{smooth}'] = stoch[f'STOCHk_{k}_{d}_{smooth}']
+                    new_columns[f'STOCHd_{k}_{d}_{smooth}'] = stoch[f'STOCHd_{k}_{d}_{smooth}']
         
         for length in config.adx_lengths:
             adx = ta.adx(df['high'], df['low'], df['close'], length=length)
             new_columns[f'ADX_{length}'] = adx[f'ADX_{length}']
             new_columns[f'DMP_{length}'] = adx[f'DMP_{length}']
             new_columns[f'DMN_{length}'] = adx[f'DMN_{length}']
+
+        for length in config.bb_lengths:
+            for std in config.bb_stds:
+                bbands = ta.bbands(close=df['close'], length=length, std=std)
+                new_columns[f'ratio_BBL_{length}_{std}'] = bbands[f'BBL_{length}_{std}'] / df['close']
+                new_columns[f'ratio_BBM_{length}_{std}'] = bbands[f'BBM_{length}_{std}'] / df['close']
+                new_columns[f'ratio_BBU_{length}_{std}'] = bbands[f'BBU_{length}_{std}'] / df['close']
+                new_columns[f'ratio_BBB_{length}_{std}'] = bbands[f'BBB_{length}_{std}'] / df['close']
+                new_columns[f'ratio_BBP_{length}_{std}'] = bbands[f'BBP_{length}_{std}'] / df['close']
+
+        for a,b,c in config.ichimoku:
+            add_ichimoku_components(df, a, b, c, new_columns)
 
         # custom features
         for length in config.std_lengths:
@@ -184,16 +224,16 @@ def add_features(dfs: List[pd.DataFrame], config: FeaturesConfig) -> List[pd.Dat
     return result
 
 
-def create_scaler(dfs, columns_to_normalize, scaler_path='scaler.pkl') -> MinMaxScaler:
+def create_scaler(dfs, columns_to_normalize, scaler_path='scaler.pkl') -> StandardScaler:
     combined_df = pd.concat(dfs)
-    scaler = MinMaxScaler(clip=True)
+    scaler = StandardScaler()
     combined_df[columns_to_normalize] = scaler.fit_transform(combined_df[columns_to_normalize])
     with open(scaler_path, 'wb') as f:
         pickle.dump(scaler, f)
     return scaler
 
 
-def normalize_data(dfs: List[pd.DataFrame], scaler: MinMaxScaler, columns_to_normalize: List[str]) -> List[pd.DataFrame]:
+def normalize_data(dfs: List[pd.DataFrame], scaler: StandardScaler, columns_to_normalize: List[str]) -> List[pd.DataFrame]:
     for df in dfs:
         df[columns_to_normalize] = scaler.transform(df[columns_to_normalize])
     return dfs
@@ -369,3 +409,44 @@ def create_training_data_next_close_direction(
   
     return sequences, labels, combined_data
  
+
+def balance_dataset(
+        sequences: List[np.ndarray], 
+        labels: List[int], 
+        method: str = 'downsample', 
+        max_percentage_diff: float = 0.1
+    ) -> tuple[List[np.ndarray], List[int]]:
+    # Separate the sequences and labels into different classes
+    class_0_indices = [i for i, label in enumerate(labels) if label == 0]
+    class_1_indices = [i for i, label in enumerate(labels) if label == 1]
+    
+    # Determine minority and majority classes
+    if len(class_0_indices) > len(class_1_indices):
+        majority_class_indices = class_0_indices
+        minority_class_indices = class_1_indices
+    else:
+        majority_class_indices = class_1_indices
+        minority_class_indices = class_0_indices
+    
+    # Calculate the target size for balancing
+    if method == 'downsample':
+        # Maximum allowable size for the majority class
+        max_majority_size = int(len(minority_class_indices) * (1 + max_percentage_diff))
+        if len(majority_class_indices) > max_majority_size:
+            majority_class_indices = random.sample(majority_class_indices, max_majority_size)
+    elif method == 'upsample':
+        # Target size for the minority class
+        target_minority_size = int(len(majority_class_indices) / (1 + max_percentage_diff))
+        minority_class_indices = minority_class_indices * (target_minority_size // len(minority_class_indices)) + random.choices(minority_class_indices, k=target_minority_size % len(minority_class_indices))
+    else:
+        raise ValueError("Method should be either 'downsample' or 'upsample'")
+    
+    # Combine the indices and shuffle them to mix the classes
+    balanced_indices = majority_class_indices + minority_class_indices
+    random.shuffle(balanced_indices)
+    
+    # Create balanced sequences and labels
+    balanced_sequences = [sequences[i] for i in balanced_indices]
+    balanced_labels = [labels[i] for i in balanced_indices]
+    
+    return balanced_sequences, balanced_labels

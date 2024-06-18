@@ -20,7 +20,7 @@ def test_model(model, x_test, y_test):
     X = np.array(x_test)
     y_true = np.array(y_test)
     y_pred = model.predict(X)
-    y_pred = (y_pred > 0.5).astype(int)
+    y_pred = (y_pred > 0.7).astype(int)
     accuracy = accuracy_score(y_true, y_pred)
     report = classification_report(y_true, y_pred)
     return accuracy, report, y_pred
