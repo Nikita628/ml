@@ -1,0 +1,65 @@
+JST_USDT.csv
+accuracy=0.45569620253164556
+              precision    recall  f1-score   support
+
+           0       0.62      0.01      0.02       418
+           1       0.45      0.85      0.59       486
+           2       0.48      0.44      0.46       281
+
+    accuracy                           0.46      1185
+   macro avg       0.52      0.43      0.36      1185
+weighted avg       0.52      0.46      0.36      1185
+
+
+MKR_USDT.csv
+accuracy=0.4186046511627907
+              precision    recall  f1-score   support
+
+           0       0.50      0.01      0.02       472
+           1       0.42      0.93      0.58       491
+           2       0.40      0.17      0.24       241
+
+    accuracy                           0.42      1204
+   macro avg       0.44      0.37      0.28      1204
+weighted avg       0.45      0.42      0.29      1204
+
+
+NEO_USDT.csv
+accuracy=0.45091743119266053
+              precision    recall  f1-score   support
+
+           0       0.62      0.01      0.02       838
+           1       0.46      0.94      0.61       978
+           2       0.36      0.16      0.22       364
+
+    accuracy                           0.45      2180
+   macro avg       0.48      0.37      0.28      2180
+weighted avg       0.50      0.45      0.32      2180
+
+
+SUN_USDT.csv
+accuracy=0.4294478527607362
+              precision    recall  f1-score   support
+
+           0       0.38      0.01      0.02       387
+           1       0.41      0.77      0.53       431
+           2       0.48      0.48      0.48       323
+
+    accuracy                           0.43      1141
+   macro avg       0.42      0.42      0.34      1141
+weighted avg       0.42      0.43      0.34      1141
+
+
+VET_USDT.csv
+accuracy=0.4655975168132437
+              precision    recall  f1-score   support
+
+           0       0.64      0.01      0.02       728
+           1       0.46      0.94      0.62       873
+           2       0.46      0.21      0.29       332
+
+    accuracy                           0.47      1933
+   macro avg       0.52      0.39      0.31      1933
+weighted avg       0.53      0.47      0.34      1933
+
+

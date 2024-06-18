@@ -66,7 +66,7 @@ def prepare_model(
     )
 
     label_percentages = calculate_label_percentages(labels=labels)
-    # sequences, labels = balance_dataset(sequences=sequences, labels=labels, method='upsample')
+    print(f'label percentages: \n{label_percentages}')
 
     # modeling
     input_shape = (training_data_config.sequence_length, len(feature_columns))
@@ -125,7 +125,7 @@ def prepare_model_ensemble(
 
     sequences, labels, _ = create_training_data(dfs=dataframes, feature_columns=feature_columns, config=training_data_config)
     label_percentages = calculate_label_percentages(labels=labels)
-    # sequences, labels = balance_dataset(sequences=sequences, labels=labels)
+    print(f'label percentages: \n{label_percentages}')
 
     X_train, X_test, y_train, y_test = train_test_split(sequences, labels, test_size=test_size, random_state=random_state)
     X_train = np.array(X_train)
@@ -183,7 +183,21 @@ def prepare_model_ensemble(
     )
 
 
-features_config = FeaturesConfig()
+features_config = FeaturesConfig(
+    sma_lengths=[2,3,5,7,10],
+    ema_lengths=[2,3,5,7,10],
+    rsi_lengths=[2,3,5,7,10],
+    stoch_k_lengths=[2,3,5,7,10],
+    stoch_d_lengths=[2,3,5,7,10],
+    stoch_k_smooth=[2,3,5,7,10],
+    mfi_lengths=[2,3,5,7,10],
+    adx_lengths=[2,3,5,7,10],
+    atr_lengths=[2,3,5,7,10],
+    std_lengths=[2,3,5,7,10],
+    bb_lengths=[2,3,5,7,10],
+    bb_stds=[1.0, 1.5, 2.0],
+    ichimoku=[(9, 26, 52),(5, 15, 30),(6, 13, 26),(3, 6, 12)],
+)
 training_data_config = TrainingDataConfig(
     sequence_length=2,
     future_candles_count=2,
