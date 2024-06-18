@@ -205,20 +205,12 @@ training_data_config = TrainingDataConfig(
 )
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        prepare_model(
-            data_path='src/datasets_4h/small',
-            unseen_path='src/datasets_4h/unseen',
-            features_config=features_config,
-            training_data_config=training_data_config,
-        )
-    else:
-        prepare_model(
-            data_path='src/datasets_1d/small',
-            unseen_path='src/datasets_1d/unseen',
-            features_config=features_config,
-            training_data_config=training_data_config,
-        )
+    prepare_model(
+        data_path='src/datasets_1d/small',
+        unseen_path='src/datasets_1d/unseen',
+        features_config=features_config,
+        training_data_config=training_data_config,
+    )
 
 
 # Imbalanced Dataset: 
