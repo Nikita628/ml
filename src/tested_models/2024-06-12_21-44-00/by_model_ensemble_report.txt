@@ -1,0 +1,110 @@
+0.7083772848213864
+              precision    recall  f1-score   support
+
+           0       0.74      0.75      0.75     36217
+           1       0.66      0.65      0.66     27300
+
+    accuracy                           0.71     63517
+   macro avg       0.70      0.70      0.70     63517
+weighted avg       0.71      0.71      0.71     63517
+
+
+0.702221452524521
+              precision    recall  f1-score   support
+
+           0       0.73      0.75      0.74     36217
+           1       0.66      0.64      0.65     27300
+
+    accuracy                           0.70     63517
+   macro avg       0.70      0.69      0.70     63517
+weighted avg       0.70      0.70      0.70     63517
+
+
+0.6881622242864115
+              precision    recall  f1-score   support
+
+           0       0.71      0.76      0.73     36217
+           1       0.65      0.60      0.62     27300
+
+    accuracy                           0.69     63517
+   macro avg       0.68      0.68      0.68     63517
+weighted avg       0.69      0.69      0.69     63517
+
+
+0.7072437300250327
+              precision    recall  f1-score   support
+
+           0       0.73      0.77      0.75     36217
+           1       0.67      0.62      0.65     27300
+
+    accuracy                           0.71     63517
+   macro avg       0.70      0.70      0.70     63517
+weighted avg       0.71      0.71      0.71     63517
+
+
+0.719256262103059
+              precision    recall  f1-score   support
+
+           0       0.74      0.78      0.76     36217
+           1       0.69      0.64      0.66     27300
+
+    accuracy                           0.72     63517
+   macro avg       0.71      0.71      0.71     63517
+weighted avg       0.72      0.72      0.72     63517
+
+
+0.7193664688193712
+              precision    recall  f1-score   support
+
+           0       0.74      0.79      0.76     36217
+           1       0.69      0.62      0.66     27300
+
+    accuracy                           0.72     63517
+   macro avg       0.71      0.71      0.71     63517
+weighted avg       0.72      0.72      0.72     63517
+
+
+0.7092589385518837
+              precision    recall  f1-score   support
+
+           0       0.74      0.75      0.75     36217
+           1       0.66      0.65      0.66     27300
+
+    accuracy                           0.71     63517
+   macro avg       0.70      0.70      0.70     63517
+weighted avg       0.71      0.71      0.71     63517
+
+
+0.7105184438811657
+              precision    recall  f1-score   support
+
+           0       0.74      0.77      0.75     36217
+           1       0.67      0.63      0.65     27300
+
+    accuracy                           0.71     63517
+   macro avg       0.70      0.70      0.70     63517
+weighted avg       0.71      0.71      0.71     63517
+
+
+0.7230347780909048
+              precision    recall  f1-score   support
+
+           0       0.75      0.77      0.76     36217
+           1       0.68      0.66      0.67     27300
+
+    accuracy                           0.72     63517
+   macro avg       0.72      0.72      0.72     63517
+weighted avg       0.72      0.72      0.72     63517
+
+
+0.7070233165924084
+              precision    recall  f1-score   support
+
+           0       0.74      0.74      0.74     36217
+           1       0.66      0.66      0.66     27300
+
+    accuracy                           0.71     63517
+   macro avg       0.70      0.70      0.70     63517
+weighted avg       0.71      0.71      0.71     63517
+
+
