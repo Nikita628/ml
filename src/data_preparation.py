@@ -1,6 +1,5 @@
 from typing import List, Any
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
 import os
 import pickle
 import pandas_ta as ta
@@ -62,9 +61,6 @@ class FeaturesConfig:
             bb_lengths=[2,3,5,7,10,15,20,25,30],
             bb_stds=[1.5, 2.0, 3.0],
             ichimoku=[(9, 26, 52),(5, 15, 30),(12, 24, 48),(10, 30, 60),(7, 22, 44)],
-            is_pct=True,
-            is_slopes=False,
-            is_order=False,
         ):
         self.sma_lengths = sma_lengths
         self.ema_lengths = ema_lengths
@@ -79,9 +75,6 @@ class FeaturesConfig:
         self.bb_lengths = bb_lengths
         self.ichimoku = ichimoku
         self.bb_stds = bb_stds
-        self.is_pct = is_pct
-        self.is_slopes = is_slopes
-        self.is_order = is_order
 
     def __str__(self):
         return (
@@ -99,9 +92,6 @@ class FeaturesConfig:
             f"  bb_lengths={self.bb_lengths}\n"
             f"  ichimoku={self.ichimoku}\n"
             f"  bb_stds={self.bb_stds}\n"
-            f"  is_pct={self.is_pct}\n"
-            f"  is_slopes={self.is_slopes}\n"
-            f"  is_order={self.is_order}\n"
             f")"
         )
 
@@ -167,52 +157,22 @@ def add_features(dfs: List[pd.DataFrame], config: FeaturesConfig) -> List[pd.Dat
         for length in config.std_lengths:
             new_columns[f'variation_{length}'] = df['close'].rolling(window=length).std() / df['close'].rolling(window=length).mean()
 
-        if config.is_pct:
-            new_columns['close_pct_change'] = df['close'].pct_change()
-            new_columns['high_pct_change'] = df['high'].pct_change()
-            new_columns['low_pct_change'] = df['low'].pct_change()
-            new_columns['open_pct_change'] = df['open'].pct_change()
-            new_columns['volume_pct_change'] = df['volume'].pct_change()
-            new_columns['ratio_open_close'] = df['open'] / df['close']
-            new_columns['ratio_high_close'] = df['high'] / df['close']
-            new_columns['ratio_low_close'] = df['low'] / df['close']
-            for length in config.sma_lengths:
-                new_columns[f'ratio_SMA_{length}_close'] = new_columns[f'SMA_{length}'] / df['close']
-            for length in config.ema_lengths:
-                new_columns[f'ratio_EMA_{length}_close'] = new_columns[f'EMA_{length}'] / df['close']
+        new_columns['close_pct_change'] = df['close'].pct_change()
+        new_columns['high_pct_change'] = df['high'].pct_change()
+        new_columns['low_pct_change'] = df['low'].pct_change()
+        new_columns['open_pct_change'] = df['open'].pct_change()
+        new_columns['volume_pct_change'] = df['volume'].pct_change()
+        new_columns['ratio_open_close'] = df['open'] / df['close']
+        new_columns['ratio_high_close'] = df['high'] / df['close']
+        new_columns['ratio_low_close'] = df['low'] / df['close']
 
-        new_columns_df = pd.DataFrame(new_columns)
+        for length in config.sma_lengths:
+            new_columns[f'ratio_SMA_{length}_close'] = new_columns[f'SMA_{length}'] / df['close']
 
-        dependent_columns = {}
+        for length in config.ema_lengths:
+            new_columns[f'ratio_EMA_{length}_close'] = new_columns[f'EMA_{length}'] / df['close']
 
-        if config.is_slopes:
-            for length in config.sma_lengths:
-                dependent_columns[f'SMA_{length}_slope'] = (new_columns_df[f'SMA_{length}'] > new_columns_df[f'SMA_{length}'].shift(1)).astype(int)
-                dependent_columns[f'SMA_{length}_below_close'] = (df['close'] > new_columns_df[f'SMA_{length}']).astype(int)
-
-            for length in config.ema_lengths:
-                dependent_columns[f'EMA_{length}_slope'] = (new_columns_df[f'EMA_{length}'] > new_columns_df[f'EMA_{length}'].shift(1)).astype(int)
-                dependent_columns[f'EMA_{length}_below_close'] = (df['close'] > new_columns_df[f'EMA_{length}']).astype(int)
-
-            for length in config.rsi_lengths:
-                dependent_columns[f'RSI_{length}_slope'] = (new_columns_df[f'RSI_{length}'] > new_columns_df[f'RSI_{length}'].shift(1)).astype(int)
-
-            for length in config.mfi_lengths:
-                dependent_columns[f'MFI_{length}_slope'] = (new_columns_df[f'MFI_{length}'] > new_columns_df[f'MFI_{length}'].shift(1)).astype(int)
-
-            for length in config.stoch_lengths:
-                for d in config.stoch_ds:
-                    dependent_columns[f'STOCHk_{length}_{d}_slope'] = (new_columns_df[f'STOCHk_{length}_{d}'] > new_columns_df[f'STOCHk_{length}_{d}'].shift(1)).astype(int)
-                    dependent_columns[f'STOCHd_{length}_{d}_slope'] = (new_columns_df[f'STOCHd_{length}_{d}'] > new_columns_df[f'STOCHd_{length}_{d}'].shift(1)).astype(int)
-
-        if config.is_order:
-            for i in range(len(config.sma_lengths) - 1):
-                dependent_columns[f'SMA_ordered_{config.sma_lengths[i]}_{config.sma_lengths[i+1]}'] = (new_columns_df[f'SMA_{config.sma_lengths[i]}'] > new_columns_df[f'SMA_{config.sma_lengths[i+1]}']).astype(int)
-            
-            for i in range(len(config.ema_lengths) - 1):
-                dependent_columns[f'EMA_ordered_{config.ema_lengths[i]}_{config.ema_lengths[i+1]}'] = (new_columns_df[f'EMA_{config.ema_lengths[i]}'] > new_columns_df[f'EMA_{config.ema_lengths[i+1]}']).astype(int)
-
-        df_with_features = pd.concat([df, new_columns_df, pd.DataFrame(dependent_columns)], axis=1)
+        df_with_features = pd.concat([df, pd.DataFrame(new_columns)], axis=1)
         df_with_features.dropna(inplace=True)
 
         # drop unnecessary columns
