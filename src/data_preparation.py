@@ -40,6 +40,11 @@ def load_data(directory_path: str, min_len=500) -> List[pd.DataFrame]:
             if len(df) < min_len:
                 continue
 
+            df['high'] = df['high'].astype(float)
+            df['low'] = df['low'].astype(float)
+            df['close'] = df['close'].astype(float)
+            df['volume'] = df['volume'].astype(float) 
+            df['open'] = df['open'].astype(float) 
             df['file'] = filename
             dataframes.append(df)
     return dataframes
