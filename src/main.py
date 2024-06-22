@@ -213,6 +213,8 @@ if __name__ == '__main__':
     )
 
 
+# most optimal sequence length on 1d is between 15 - 20, given tech indicators lengths up to 10
+
 # Imbalanced Dataset: 
 # If there is a class imbalance, consider techniques like oversampling (duplicating instances of the minority class) 
 # or undersampling (reducing instances of the majority class) to balance the dataset.

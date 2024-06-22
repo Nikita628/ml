@@ -46,8 +46,22 @@ def load_data(directory_path: str, min_len=500) -> List[pd.DataFrame]:
             df['volume'] = df['volume'].astype(float) 
             df['open'] = df['open'].astype(float) 
             df['file'] = filename
-            dataframes.append(df)
+            df = prune_zeros(df)
+
+            if len(df) >= min_len:
+                dataframes.append(df)
+
     return dataframes
+
+
+def prune_zeros(df: pd.DataFrame) -> pd.DataFrame:
+    # Find the latest row where any of the columns contains 0.0
+    pruned_df = df
+    zero_mask = (df[['open', 'close', 'high', 'low', 'volume']] == 0.0).any(axis=1)
+    if zero_mask.any():
+        last_zero_index = zero_mask[::-1].idxmax()
+        pruned_df = df.iloc[last_zero_index + 1:]
+    return pruned_df
 
 
 class FeaturesConfig:
