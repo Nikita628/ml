@@ -214,6 +214,7 @@ if __name__ == '__main__':
 
 
 # most optimal sequence length on 1d is between 15 - 20, given tech indicators lengths up to 10
+# sensitivity (recall) drops down after making the model more complex (adding more layers)
 
 # Imbalanced Dataset: 
 # If there is a class imbalance, consider techniques like oversampling (duplicating instances of the minority class) 
