@@ -10,18 +10,10 @@ import keras_tuner as kt
 import keras as k
 
 def create_model(input_shape: tuple[int, int]):
-    # model = Sequential()
-    # model.add(Bidirectional(LSTM(units=100, return_sequences=True), input_shape=input_shape))
-    # model.add(Dropout(0.2))
-    # model.add(Bidirectional(LSTM(units=250, return_sequences=True)))
-    # model.add(Dropout(0.2))
-    # model.add(Bidirectional(LSTM(units=150)))
-    # model.add(Dropout(0.2))
-    # model.add(Dense(units=1, activation='sigmoid'))
-    # optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
-    # model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
     model = Sequential()
     model.add(Bidirectional(LSTM(units=200, return_sequences=True), input_shape=input_shape))
+    model.add(Dropout(0.2))
+    model.add(Bidirectional(LSTM(units=300, return_sequences=True)))
     model.add(Dropout(0.2))
     model.add(Bidirectional(LSTM(units=300, return_sequences=True)))
     model.add(Dropout(0.2))

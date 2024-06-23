@@ -184,6 +184,7 @@ def add_features(dfs: List[pd.DataFrame], config: FeaturesConfig) -> List[pd.Dat
         new_columns['ratio_open_close'] = df['open'] / df['close']
         new_columns['ratio_high_close'] = df['high'] / df['close']
         new_columns['ratio_low_close'] = df['low'] / df['close']
+        new_columns['ratio_high_low'] = df['high'] / df['low']
 
         for length in config.sma_lengths:
             new_columns[f'ratio_SMA_{length}_close'] = new_columns[f'SMA_{length}'] / df['close']
