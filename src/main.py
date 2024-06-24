@@ -230,13 +230,10 @@ if __name__ == '__main__':
 
 # Ideas
 #
-# increase the thrashold of the binary classifier (> 0.5 -> > 0.7)
 # multiclass classifier - increase 5% -> class 1, increase 10% -> class 2, etc.
 # regression ? predict percentage change ?
 # train only on recent data (1000 last candles)
-# more momentum tech indicators
 # explore shorter timeframes
-# various sequence lengths
 
 # predict
     # load model
