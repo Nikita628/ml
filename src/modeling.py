@@ -11,15 +11,15 @@ import keras as k
 
 def create_model(input_shape: tuple[int, int]):
     model = Sequential()
-    model.add(Bidirectional(LSTM(units=200, return_sequences=True, activation='ReLU'), input_shape=input_shape))
+    model.add(Bidirectional(LSTM(units=200, return_sequences=True), input_shape=input_shape))
     model.add(Dropout(0.2))
-    model.add(Bidirectional(LSTM(units=300, return_sequences=True, activation='ReLU')))
+    model.add(Bidirectional(LSTM(units=300, return_sequences=True)))
     model.add(Dropout(0.2))
-    model.add(Bidirectional(LSTM(units=300, return_sequences=True, activation='ReLU')))
+    model.add(Bidirectional(LSTM(units=300, return_sequences=True)))
     model.add(Dropout(0.2))
-    model.add(Bidirectional(LSTM(units=300, return_sequences=True, activation='ReLU')))
+    model.add(Bidirectional(LSTM(units=300, return_sequences=True)))
     model.add(Dropout(0.2))
-    model.add(Bidirectional(LSTM(units=200, activation='ReLU')))
+    model.add(Bidirectional(LSTM(units=200)))
     model.add(Dropout(0.2))
     model.add(Dense(units=1, activation='sigmoid'))
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
@@ -55,6 +55,8 @@ def cross_validate_model(model_builder, sequences, labels, n_splits=5):
         X_train, X_val = np.array(sequences)[train_index], np.array(sequences)[val_index]
         y_train, y_val = np.array(labels)[train_index], np.array(labels)[val_index]
         
+        # TODO: do not build a new model each time
+        # we should train same model several times, and the score would be the average of those
         model = model_builder(input_shape=(X_train.shape[1], X_train.shape[2]))
         model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_val, y_val), verbose=0)
         
