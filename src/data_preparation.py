@@ -174,7 +174,7 @@ def add_features(dfs: List[pd.DataFrame], config: FeaturesConfig) -> List[pd.Dat
 
         # custom features
         for length in config.std_lengths:
-            new_columns[f'variation_{length}'] = df['close'].rolling(window=length).std() / df['close'].rolling(window=length).mean()
+            new_columns[f'std_pct_{length}'] = df['close'].rolling(window=length).std() / df['close'].rolling(window=length).mean()
 
         new_columns['close_pct_change'] = df['close'].pct_change()
         new_columns['high_pct_change'] = df['high'].pct_change()
