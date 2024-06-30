@@ -72,7 +72,13 @@ def prepare_model(
     input_shape = (training_data_config.sequence_length, len(feature_columns))
     model = create_model(input_shape=input_shape)
 
-    X_train, X_test, y_train, y_test = train_test_split(sequences, labels, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        sequences, 
+        labels, 
+        test_size=0.2, 
+        random_state=42, 
+        stratify=labels
+    )
     model = train_model(model=model, x_train=X_train, y_train=y_train)
     model_path = f'{model_dir_path}/model.h5'
     save_model(model=model, model_path=model_path)
@@ -127,7 +133,13 @@ def prepare_model_ensemble(
     label_percentages = calculate_label_percentages(labels=labels)
     print(f'label percentages: \n{label_percentages}')
 
-    X_train, X_test, y_train, y_test = train_test_split(sequences, labels, test_size=test_size, random_state=random_state)
+    X_train, X_test, y_train, y_test = train_test_split(
+        sequences, 
+        labels, 
+        test_size=test_size, 
+        random_state=random_state,
+        stratify=labels
+    )
     X_train = np.array(X_train)
     y_train = np.array(y_train)
 

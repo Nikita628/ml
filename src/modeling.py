@@ -37,7 +37,7 @@ def load_model(model_path='model.h5'):
 def train_model(model, x_train, y_train, epochs=100, batch_size=32):
     X = np.array(x_train)
     y = np.array(y_train)
-    early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
     model.fit(X, y, epochs=epochs, batch_size=batch_size, validation_split=0.1, callbacks=[early_stopping]) 
     return model
 
