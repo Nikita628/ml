@@ -1,0 +1,65 @@
+
+data_path=src/datasets_1d/largeX2
+unseen_path=src/datasets_1d/unseen
+
+accuracy = 0.6642949547218628
+
+training data config:
+SequencesLabelsConfig(
+  sequence_length=15,
+  future_candles_count=2,
+  atr_multiple=1.0,
+  atr_length=7,
+  pct_increase=3,
+  prediction_type=PredictionType.pct_increase,
+)
+
+label percentages:
+{1: 33.88063999198758, 0: 66.11936000801242}
+
+classification report:
+              precision    recall  f1-score   support
+
+           0       0.66      1.00      0.80     63674
+           1       0.00      0.00      0.00     32178
+
+    accuracy                           0.66     95852
+   macro avg       0.33      0.50      0.40     95852
+weighted avg       0.44      0.66      0.53     95852
+
+
+features config:
+FeaturesConfig(
+  sma_lengths=[2, 3, 5, 7, 10, 20, 50, 100, 200],
+  ema_lengths=[2, 3, 5, 7, 10, 20, 50, 100, 200],
+  rsi_lengths=[2, 3, 5, 7, 10, 20],
+  stoch_k_lengths=[2, 3, 5, 7, 10, 20],
+  stoch_d_lengths=[2, 3, 5, 7, 10, 20],
+  stoch_k_smooth=[2, 3, 5, 7, 10, 20],
+  mfi_lengths=[2, 3, 5, 7, 10, 20],
+  adx_lengths=[2, 3, 5, 7, 10, 20],
+  atr_lengths=[2, 3, 5, 7, 10, 20],
+  std_lengths=[2, 3, 5, 7, 10, 20]
+  bb_lengths=[2, 3, 5, 7, 10, 20]
+  ichimoku=[(9, 26, 52), (5, 15, 30), (6, 13, 26), (3, 6, 12)]
+  bb_stds=[1.0, 1.5, 2.0]
+)
+
+model config:
+def create_model(input_shape: tuple[int, int]):
+    model = Sequential()
+    model.add(Bidirectional(LSTM(units=200, return_sequences=True, activation='relu'), input_shape=input_shape))
+    model.add(Dropout(0.2))
+    model.add(Bidirectional(LSTM(units=300, return_sequences=True, activation='relu')))
+    model.add(Dropout(0.2))
+    model.add(Bidirectional(LSTM(units=300, return_sequences=True, activation='relu')))
+    model.add(Dropout(0.2))
+    # model.add(Bidirectional(LSTM(units=300, return_sequences=True, activation='relu')))
+    # model.add(Dropout(0.2))
+    model.add(Bidirectional(LSTM(units=200, activation='relu')))
+    model.add(Dropout(0.2))
+    model.add(Dense(units=1, activation='sigmoid'))
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+    model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+
