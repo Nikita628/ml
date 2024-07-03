@@ -1,0 +1,65 @@
+
+data_path=src/datasets_12h/small
+unseen_path=src/datasets_12h/unseen
+
+accuracy = 0.6389521640091116
+
+training data config:
+SequencesLabelsConfig(
+  sequence_length=2,
+  future_candles_count=2,
+  atr_multiple=1.0,
+  atr_length=7,
+  pct_increase=1,
+  prediction_type=PredictionType.pct_increase,
+)
+
+label percentages:
+{1: 41.74071542492595, 0: 58.25928457507404}
+
+classification report:
+              precision    recall  f1-score   support
+
+           0       0.63      0.95      0.75       512
+           1       0.73      0.21      0.33       366
+
+    accuracy                           0.64       878
+   macro avg       0.68      0.58      0.54       878
+weighted avg       0.67      0.64      0.58       878
+
+
+features config:
+FeaturesConfig(
+  sma_lengths=[2, 3, 5, 7, 10],
+  ema_lengths=[2, 3, 5, 7, 10],
+  rsi_lengths=[2, 3, 5, 7, 10],
+  stoch_k_lengths=[2, 3, 5, 7, 10],
+  stoch_d_lengths=[2, 3, 5, 7, 10],
+  stoch_k_smooth=[2, 3, 5, 7, 10],
+  mfi_lengths=[2, 3, 5, 7, 10],
+  adx_lengths=[2, 3, 5, 7, 10],
+  atr_lengths=[2, 3, 5, 7, 10],
+  std_lengths=[2, 3, 5, 7, 10]
+  bb_lengths=[2, 3, 5, 7, 10]
+  ichimoku=[(9, 26, 52), (5, 15, 30), (6, 13, 26), (3, 6, 12)]
+  bb_stds=[1.0, 1.5, 2.0]
+)
+
+model config:
+def create_model(input_shape: tuple[int, int]):
+    model = Sequential()
+    model.add(Bidirectional(LSTM(units=50, return_sequences=True), input_shape=input_shape))
+    model.add(Dropout(0.2))
+    model.add(Bidirectional(LSTM(units=50, return_sequences=True)))
+    model.add(Dropout(0.2))
+    # model.add(Bidirectional(LSTM(units=100, return_sequences=True)))
+    # model.add(Dropout(0.2))
+    # model.add(Bidirectional(LSTM(units=300, return_sequences=True)))
+    # model.add(Dropout(0.2))
+    model.add(Bidirectional(LSTM(units=50)))
+    model.add(Dropout(0.2))
+    model.add(Dense(units=1, activation='sigmoid'))
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+    model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+

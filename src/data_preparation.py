@@ -345,7 +345,8 @@ def create_training_data_percentage_increase(
     combined_data = []
 
     for df in dfs:
-        for i in range(len(df) - sequence_length - future_candles):
+        i = 0
+        while i < len(df) - sequence_length - future_candles:
             sequence = df[feature_columns].iloc[i:i+sequence_length].values
             future_closes = df['close'].iloc[i+sequence_length:i+sequence_length+future_candles]
             current_close = df['close'].iloc[i+sequence_length-1]
@@ -359,6 +360,7 @@ def create_training_data_percentage_increase(
             if collect_combined_data:
                 combined_row = [sequence_start_date, sequence_end_date, prediction_end_date] + sequence.flatten().tolist() + [label]
                 combined_data.append(combined_row)
+            i += sequence_length + future_candles
      
     return sequences, labels, combined_data
 
