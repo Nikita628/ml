@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Tuple
 import pandas as pd
 import os
 import pickle
@@ -9,6 +9,7 @@ from collections import Counter
 import random
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from sklearn.utils import resample
 
 def calculate_label_percentages(labels) -> dict[str, float]:
     total_count = len(labels)
@@ -207,7 +208,7 @@ def add_features(dfs: List[pd.DataFrame], config: FeaturesConfig) -> List[pd.Dat
 def create_scaler(dfs, columns_to_normalize, scaler_path='scaler.pkl') -> StandardScaler:
     combined_df = pd.concat(dfs)
     scaler = StandardScaler()
-    combined_df[columns_to_normalize] = scaler.fit_transform(combined_df[columns_to_normalize])
+    scaler.fit(combined_df[columns_to_normalize])
     with open(scaler_path, 'wb') as f:
         pickle.dump(scaler, f)
     return scaler
@@ -263,7 +264,7 @@ def create_training_data(
         feature_columns: List[str], 
         config: TrainingDataConfig,
         collect_combined_data: bool = False,
-    ) -> tuple[List[ndarray], List[int], List]:
+    ) -> Tuple[ndarray, ndarray, List]:
 
     if config.prediction_type == PredictionType.atr_mult:
         return create_training_data_atr_percentage_increase(
@@ -303,7 +304,7 @@ def create_training_data_atr_percentage_increase(
         atr_multiple=1.0,
         atr_length=14,
         collect_combined_data: bool = False,
-    ) -> tuple[List[ndarray], List[int], List]:
+    ) -> Tuple[ndarray, ndarray, List]:
 
     sequences = []
     labels = []
@@ -328,7 +329,7 @@ def create_training_data_atr_percentage_increase(
                 combined_data.append(combined_row)
         df.drop(columns=[f'ATR_label_{atr_length}'], inplace=True)
        
-    return sequences, labels, combined_data
+    return np.array(sequences), np.array(labels), combined_data
 
 
 def create_training_data_percentage_increase(
@@ -338,7 +339,7 @@ def create_training_data_percentage_increase(
         future_candles=3, 
         percentage_increase=1.0,
         collect_combined_data: bool = False,
-    ) -> tuple[List[ndarray], List[int], List]:
+    ) -> Tuple[ndarray, ndarray, List]:
 
     sequences = []
     labels = []
@@ -360,7 +361,7 @@ def create_training_data_percentage_increase(
                 combined_row = [sequence_start_date, sequence_end_date, prediction_end_date] + sequence.flatten().tolist() + [label]
                 combined_data.append(combined_row)
      
-    return sequences, labels, combined_data
+    return np.array(sequences), np.array(labels), combined_data
 
 
 def create_training_data_next_close_direction(
@@ -368,7 +369,7 @@ def create_training_data_next_close_direction(
         sequence_length: int, 
         feature_columns: List[str],
         collect_combined_data: bool = False,
-    ) -> tuple[List[ndarray], List[int], List]:
+    ) -> Tuple[ndarray, ndarray, List]:
 
     sequences = []
     labels = []
@@ -387,46 +388,61 @@ def create_training_data_next_close_direction(
                 combined_row = [sequence_start_date, sequence_end_date, prediction_end_date] + sequence.flatten().tolist() + [label]
                 combined_data.append(combined_row)
   
-    return sequences, labels, combined_data
+    return np.array(sequences), np.array(labels), combined_data
  
 
-def balance_dataset(
-        sequences: List[np.ndarray], 
-        labels: List[int], 
-        method: str = 'downsample', 
-        max_percentage_diff: float = 0.1
-    ) -> tuple[List[np.ndarray], List[int]]:
-    # Separate the sequences and labels into different classes
-    class_0_indices = [i for i, label in enumerate(labels) if label == 0]
-    class_1_indices = [i for i, label in enumerate(labels) if label == 1]
+def balance_dataset(X: ndarray, y: ndarray, method: str = 'over', max_pct_diff: float = 10) -> Tuple[ndarray, ndarray]:
+    # Ensure inputs are numpy arrays
+    X = np.array(X)
+    y = np.array(y)
+
+    # Get the counts of each class
+    unique, counts = np.unique(y, return_counts=True)
+    count_dict = dict(zip(unique, counts))
     
-    # Determine minority and majority classes
-    if len(class_0_indices) > len(class_1_indices):
-        majority_class_indices = class_0_indices
-        minority_class_indices = class_1_indices
+    if len(count_dict) != 2:
+        raise ValueError("The function currently supports binary classification (0/1 labels).")
+    
+    # Determine the minority and majority classes
+    minority_class = min(count_dict, key=count_dict.get)
+    majority_class = max(count_dict, key=count_dict.get)
+    
+    minority_count = count_dict[minority_class]
+    majority_count = count_dict[majority_class]
+    
+    # Calculate the percentage difference
+    current_pct_diff = abs(majority_count - minority_count) / float(len(y)) * 100
+    
+    if current_pct_diff <= max_pct_diff:
+        print("Dataset is already balanced within the specified max_pct_diff.")
+        return X, y
+    
+    # Balance the dataset based on the method
+    if method == 'over':
+        # Over-sample the minority class
+        n_samples_to_add = int((majority_count - minority_count) - (max_pct_diff / 100.0 * len(y) / 2))
+        X_minority = X[y == minority_class]
+        y_minority = y[y == minority_class]
+        
+        X_minority_upsampled = resample(X_minority, replace=True, n_samples=n_samples_to_add, random_state=42)
+        y_minority_upsampled = np.full(n_samples_to_add, minority_class)
+        
+        X_balanced = np.concatenate((X, X_minority_upsampled))
+        y_balanced = np.concatenate((y, y_minority_upsampled))
+    
+    elif method == 'under':
+        # Under-sample the majority class
+        n_samples_to_remove = int((majority_count - minority_count) - (max_pct_diff / 100.0 * len(y) / 2))
+        X_majority = X[y == majority_class]
+        y_majority = y[y == majority_class]
+        
+        X_majority_downsampled = resample(X_majority, replace=False, n_samples=majority_count - n_samples_to_remove, random_state=42)
+        y_majority_downsampled = np.full(majority_count - n_samples_to_remove, majority_class)
+        
+        X_balanced = np.concatenate((X[y != majority_class], X_majority_downsampled))
+        y_balanced = np.concatenate((y[y != majority_class], y_majority_downsampled))
+    
     else:
-        majority_class_indices = class_1_indices
-        minority_class_indices = class_0_indices
+        raise ValueError("Method must be either 'over' or 'under'.")
     
-    # Calculate the target size for balancing
-    if method == 'downsample':
-        # Maximum allowable size for the majority class
-        max_majority_size = int(len(minority_class_indices) * (1 + max_percentage_diff))
-        if len(majority_class_indices) > max_majority_size:
-            majority_class_indices = random.sample(majority_class_indices, max_majority_size)
-    elif method == 'upsample':
-        # Target size for the minority class
-        target_minority_size = int(len(majority_class_indices) / (1 + max_percentage_diff))
-        minority_class_indices = minority_class_indices * (target_minority_size // len(minority_class_indices)) + random.choices(minority_class_indices, k=target_minority_size % len(minority_class_indices))
-    else:
-        raise ValueError("Method should be either 'downsample' or 'upsample'")
-    
-    # Combine the indices and shuffle them to mix the classes
-    balanced_indices = majority_class_indices + minority_class_indices
-    random.shuffle(balanced_indices)
-    
-    # Create balanced sequences and labels
-    balanced_sequences = [sequences[i] for i in balanced_indices]
-    balanced_labels = [labels[i] for i in balanced_indices]
-    
-    return balanced_sequences, balanced_labels
+    return X_balanced, y_balanced
