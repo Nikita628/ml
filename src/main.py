@@ -68,11 +68,6 @@ def prepare_model(
     label_percentages = calculate_label_percentages(labels=labels)
     print(f'label percentages: \n{label_percentages}')
 
-    sequences, labels = balance_dataset(sequences, labels)
-
-    label_percentages = calculate_label_percentages(labels=labels)
-    print(f'label percentages: \n{label_percentages}')
-
     # modeling
     input_shape = (training_data_config.sequence_length, len(feature_columns))
     model = create_model(input_shape=input_shape)
