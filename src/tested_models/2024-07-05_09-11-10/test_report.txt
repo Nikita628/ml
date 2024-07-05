@@ -1,0 +1,63 @@
+
+data_path=src/datasets_4h/small
+unseen_path=src/datasets_4h/unseen
+
+accuracy = 0.5358022209939199
+
+training data config:
+SequencesLabelsConfig(
+  sequence_length=2,
+  future_candles_count=2,
+  atr_multiple=1.0,
+  atr_length=7,
+  pct_increase=2,
+  prediction_type=PredictionType.pct_increase,
+)
+
+label percentages:
+{1: 48.365861992723765, 0: 51.634138007276235}
+
+classification report:
+              precision    recall  f1-score   support
+
+           0       0.53      0.98      0.69     10276
+           1       0.75      0.06      0.11      9625
+
+    accuracy                           0.54     19901
+   macro avg       0.64      0.52      0.40     19901
+weighted avg       0.64      0.54      0.41     19901
+
+
+features config:
+FeaturesConfig(
+  sma_lengths=[],
+  ema_lengths=[],
+  rsi_lengths=[],
+  stoch_k_lengths=[],
+  stoch_d_lengths=[],
+  stoch_k_smooth=[],
+  mfi_lengths=[],
+  adx_lengths=[],
+  atr_lengths=[],
+  std_lengths=[]
+  bb_lengths=[]
+  ichimoku=[]
+  bb_stds=[]
+)
+
+model config:
+def create_model(input_shape: tuple[int, int]):
+    model = Sequential()
+    model.add(Bidirectional(LSTM(units=100, return_sequences=True), input_shape=input_shape))
+    model.add(Dropout(0.2))
+    model.add(Bidirectional(LSTM(units=100, return_sequences=True)))
+    model.add(Dropout(0.2))
+    model.add(Bidirectional(LSTM(units=100, return_sequences=True)))
+    model.add(Dropout(0.2))
+    model.add(Bidirectional(LSTM(units=100)))
+    model.add(Dropout(0.2))
+    model.add(Dense(units=1, activation='sigmoid'))
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+    model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+
