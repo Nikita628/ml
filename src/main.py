@@ -196,19 +196,19 @@ def prepare_model_ensemble(
 
 
 features_config = FeaturesConfig(
-    sma_lengths=[2,3,5,7,10],
-    ema_lengths=[2,3,5,7,10],
-    rsi_lengths=[2,3,5,7,10],
-    stoch_k_lengths=[2,3,5,7,10],
-    stoch_d_lengths=[2,3,5,7,10],
-    stoch_k_smooth=[2,3,5,7,10],
-    mfi_lengths=[2,3,5,7,10],
-    adx_lengths=[2,3,5,7,10],
-    atr_lengths=[2,3,5,7,10],
-    std_lengths=[2,3,5,7,10],
-    bb_lengths=[2,3,5,7,10],
-    bb_stds=[1.0, 1.5, 2.0],
-    ichimoku=[(9, 26, 52),(5, 15, 30),(6, 13, 26),(3, 6, 12)],
+    sma_lengths=[],
+    ema_lengths=[],
+    rsi_lengths=[],
+    stoch_k_lengths=[],
+    stoch_d_lengths=[],
+    stoch_k_smooth=[],
+    mfi_lengths=[],
+    adx_lengths=[],
+    atr_lengths=[],
+    std_lengths=[],
+    bb_lengths=[],
+    bb_stds=[],
+    ichimoku=[],
 )
 training_data_config = TrainingDataConfig(
     sequence_length=2,
