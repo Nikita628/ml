@@ -4,7 +4,7 @@ from keras.models import Sequential
 from keras.layers import LSTM, Dense, Dropout, Bidirectional
 from sklearn.metrics import accuracy_score, classification_report
 import tensorflow as tf
-from keras.callbacks import EarlyStopping
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from sklearn.model_selection import KFold
 import keras_tuner as kt
 import keras as k
@@ -20,10 +20,14 @@ def create_model(input_shape: tuple[int, int]):
     model.add(Bidirectional(LSTM(units=100)))
     model.add(Dropout(0.2))
     model.add(Dense(units=1, activation='sigmoid'))
-    optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.001, clipvalue=1.0)
     model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
     return model
 
+def get_callbacks():
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.0001)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    return [reduce_lr, early_stopping]
 
 def load_model(model_path='model.h5'):
     if os.path.exists(model_path):
@@ -35,8 +39,7 @@ def load_model(model_path='model.h5'):
 def train_model(model, x_train, y_train, epochs=100, batch_size=32):
     X = np.array(x_train)
     y = np.array(y_train)
-    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-    model.fit(X, y, epochs=epochs, batch_size=batch_size, validation_split=0.1, callbacks=[early_stopping]) 
+    model.fit(X, y, epochs=epochs, batch_size=batch_size, validation_split=0.1, callbacks=get_callbacks()) 
     return model
 
 
