@@ -1,6 +1,6 @@
 src/tested_models/*/*.csv
-*.h5
-*.pkl
+src/tested_models/*/*.h5
+src/tested_models/*/*.pkl
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

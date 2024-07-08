@@ -14,6 +14,8 @@ from data_preparation import (
     TrainingDataConfig,
     FeaturesConfig,
 )
+from typing import List, Any, Tuple
+from numpy import ndarray
 
 
 def test_model(model, x_test, y_test):
@@ -172,3 +174,17 @@ model config:
 
     with open(report_path, 'w') as file:
         file.write(file_content)
+
+
+def create_prediction_data(
+        df: pd.DataFrame, 
+        sequence_length: int, 
+        feature_columns: List[str], 
+    ) -> ndarray:
+
+    sequences = []
+
+    sequence = df[feature_columns].iloc[-sequence_length-1:-1].values
+    sequences.append(sequence)
+     
+    return np.array(sequences)
