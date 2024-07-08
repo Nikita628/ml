@@ -105,7 +105,7 @@ def start_trading():
                 
                 if prediction > PREDICTION_THRESHOLD:
                     last_close_price = candles[-1][4]
-                    current_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    current_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
                     
                     new_trade = {
                         'coin': coin,
@@ -133,14 +133,15 @@ def start_trading():
 def monitor_trades():
     global trades_df
     while True:
-        current_time = datetime.datetime.now()
+        current_time = datetime.datetime.utcnow()
         for index, trade in trades_df.iterrows():
             if not pd.isnull(trade['sell_date']):
                 continue
             
             coin = trade['coin']
             entry_price = trade['buy_price']
-            entry_time = datetime.datetime.strptime(trade['buy_date'], "%Y-%m-%d %H:%M:%S").timestamp() * 1000
+            entry_time = datetime.datetime.strptime(trade['buy_date'], "%Y-%m-%d %H:%M:%S")
+            entry_time = entry_time.replace(tzinfo=datetime.timezone.utc).timestamp() * 1000
             
             # Fetch latest candles since trade entry
             candles = exchange.fetch_ohlcv(coin, timeframe=TIMEFRAME, limit=MAX_CANDLES)
