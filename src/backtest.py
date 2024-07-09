@@ -40,7 +40,7 @@ PREDICTION_THRESHOLD = 0.7
 PROFIT_THRESHOLD = 0.02  # Example: 2%
 MAX_CANDLES = 6  # Example: 6 candles to evaluate profit
 SLEEP_INTERVAL = 2  # Sleep interval between API calls to respect rate limits
-MONITOR_INTERVAL = 30  # Interval to monitor trades
+MONITOR_INTERVAL = 10  # Interval to monitor trades
 TRADES_FILE = 'trades.csv'
 TIMEFRAME = '4h'  # 4-hour timeframe
 
@@ -84,7 +84,7 @@ try:
     trades_df = pd.read_csv(TRADES_FILE)
 except FileNotFoundError:
     trades_df = pd.DataFrame(columns=[
-        'coin', 'buy_price', 'sell_price', 'buy_date', 'sell_date', 'predicted', 'actual', 'profit_percentage'
+        'coin', 'buy_price', 'last_close_price', 'sell_price', 'buy_date', 'sell_date', 'predicted', 'actual', 'profit_percentage'
     ])
 
 def save_trades():
@@ -105,7 +105,7 @@ def start_trading():
                 
                 current_price = candles[-1][4]
                 last_close_price = candles[-2][4]
-                profit_condition = current_price < (last_close_price * 1.01)
+                profit_condition = current_price < (last_close_price * (1 + PROFIT_THRESHOLD / 2))
                 
                 if prediction > PREDICTION_THRESHOLD and profit_condition:
                     current_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -113,6 +113,7 @@ def start_trading():
                     new_trade = {
                         'coin': coin,
                         'buy_price': current_price,
+                        'last_close_price': last_close_price,
                         'sell_price': 0,
                         'buy_date': current_date,
                         'sell_date': None,
@@ -143,6 +144,7 @@ def monitor_trades():
             
             coin = trade['coin']
             entry_price = trade['buy_price']
+            last_close_price = trade['last_close_price']
             entry_time = datetime.datetime.strptime(trade['buy_date'], "%Y-%m-%d %H:%M:%S")
             entry_time = entry_time.replace(tzinfo=datetime.timezone.utc).timestamp() * 1000
             
@@ -155,7 +157,7 @@ def monitor_trades():
             current_price = candles[-1][4]
             profit_percentage = (current_price - entry_price) / entry_price
             
-            if profit_percentage >= PROFIT_THRESHOLD:
+            if current_price > (last_close_price * (1 + PROFIT_THRESHOLD)):
                 trades_df.at[index, 'sell_price'] = current_price
                 trades_df.at[index, 'sell_date'] = current_time.strftime("%Y-%m-%d %H:%M:%S")
                 trades_df.at[index, 'actual'] = 1
