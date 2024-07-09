@@ -132,7 +132,7 @@ def start_trading():
         except Exception as e:
             print(f"Error: {e}")
         
-        time.sleep(60)  # Wait 1 minute before next iteration
+        time.sleep(30)  # Wait 1 minute before next iteration
 
 # Monitor trades
 def monitor_trades():
