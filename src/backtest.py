@@ -57,7 +57,7 @@ exchange = ccxt.binance()
 
 # Fetch the list of all active tradable coins against USDT
 markets = exchange.load_markets()
-active_usdt_coins = [coin for coin in markets if markets[coin]['active'] and coin.endswith('USDT')]
+active_usdt_coins = [coin for coin in markets if markets[coin]['active'] and coin.endswith('/USDT')]
 
 # Function stubs
 def process_data(candles):
@@ -84,7 +84,7 @@ try:
     trades_df = pd.read_csv(TRADES_FILE)
 except FileNotFoundError:
     trades_df = pd.DataFrame(columns=[
-        'coin', 'buy_price', 'last_close_price', 'sell_price', 'buy_date', 'sell_date', 'predicted', 'actual', 'profit_percentage'
+        'coin', 'buy_price', 'last_close_price', 'sell_price', 'buy_date', 'sell_date', 'predicted', 'actual', 'profit_percentage', 'percentage_change'
     ])
 
 def save_trades():
@@ -119,7 +119,8 @@ def start_trading():
                         'sell_date': None,
                         'predicted': 1,
                         'actual': 0,
-                        'profit_percentage': 0
+                        'profit_percentage': 0,
+                        'percentage_change': 0
                     }
                     trades_df.loc[len(trades_df)] = new_trade
                     
@@ -156,12 +157,14 @@ def monitor_trades():
             
             current_price = candles[-1][4]
             profit_percentage = (current_price - entry_price) / entry_price
+            percentage_change = (current_price - last_close_price) / last_close_price * 100
             
             if current_price > (last_close_price * (1 + PROFIT_THRESHOLD)):
                 trades_df.at[index, 'sell_price'] = current_price
                 trades_df.at[index, 'sell_date'] = current_time.strftime("%Y-%m-%d %H:%M:%S")
                 trades_df.at[index, 'actual'] = 1
                 trades_df.at[index, 'profit_percentage'] = profit_percentage * 100
+                trades_df.at[index, 'percentage_change'] = percentage_change
                 save_trades()
             elif len(candles_since_entry) + 1 > MAX_CANDLES:
                 # Close the trade if MAX_CANDLES have passed and profit threshold is not reached
@@ -169,6 +172,7 @@ def monitor_trades():
                 trades_df.at[index, 'sell_date'] = current_time.strftime("%Y-%m-%d %H:%M:%S")
                 trades_df.at[index, 'actual'] = 0
                 trades_df.at[index, 'profit_percentage'] = profit_percentage * 100
+                trades_df.at[index, 'percentage_change'] = percentage_change
                 save_trades()
 
         time.sleep(MONITOR_INTERVAL)  # Wait before next monitoring iteration
