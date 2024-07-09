@@ -37,8 +37,8 @@ training_data_config = TrainingDataConfig(
 # Constants
 CANDLE_LIMIT = 30
 PREDICTION_THRESHOLD = 0.7
-PROFIT_THRESHOLD = 0.02  # Example: 5%
-MAX_CANDLES = 6  # Example: 20 candles to evaluate profit
+PROFIT_THRESHOLD = 0.02  # Example: 2%
+MAX_CANDLES = 6  # Example: 6 candles to evaluate profit
 SLEEP_INTERVAL = 2  # Sleep interval between API calls to respect rate limits
 MONITOR_INTERVAL = 30  # Interval to monitor trades
 TRADES_FILE = 'trades.csv'
@@ -103,13 +103,16 @@ def start_trading():
                 processed_data = process_data(candles)           
                 prediction = predict(processed_data)
                 
-                if prediction > PREDICTION_THRESHOLD:
-                    last_close_price = candles[-1][4]
+                current_price = candles[-1][4]
+                last_close_price = candles[-2][4]
+                profit_condition = current_price < (last_close_price * 1.01)
+                
+                if prediction > PREDICTION_THRESHOLD and profit_condition:
                     current_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
                     
                     new_trade = {
                         'coin': coin,
-                        'buy_price': last_close_price,
+                        'buy_price': current_price,
                         'sell_price': 0,
                         'buy_date': current_date,
                         'sell_date': None,
