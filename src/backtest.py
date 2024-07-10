@@ -84,7 +84,7 @@ try:
     trades_df = pd.read_csv(TRADES_FILE)
 except FileNotFoundError:
     trades_df = pd.DataFrame(columns=[
-        'coin', 'buy_price', 'last_close_price', 'sell_price', 'buy_date', 'sell_date', 'predicted', 'actual', 'profit_percentage', 'percentage_change', 'close_reason', 'candles_passed'
+        'coin', 'buy_price', 'last_close_price', 'sell_price', 'buy_date', 'sell_date', 'predicted', 'actual', 'profit_percentage', 'percentage_change', 'close_reason', 'candles_passed', 'opening_candle_date'
     ])
 
 def save_trades():
@@ -105,6 +105,7 @@ def start_trading():
                 
                 current_price = candles[-1][4]
                 last_close_price = candles[-2][4]
+                opening_candle_date = datetime.datetime.utcfromtimestamp(candles[-1][0] / 1000).strftime("%Y-%m-%d %H:%M:%S")
                 profit_condition = current_price < (last_close_price * (1 + PROFIT_THRESHOLD / 2))
                 
                 if prediction > PREDICTION_THRESHOLD and profit_condition:
@@ -122,7 +123,8 @@ def start_trading():
                         'profit_percentage': 0,
                         'percentage_change': 0,
                         'close_reason': None,
-                        'candles_passed': 0
+                        'candles_passed': 0,
+                        'opening_candle_date': opening_candle_date,
                     }
                     trades_df.loc[len(trades_df)] = new_trade
                     
