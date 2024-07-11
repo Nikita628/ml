@@ -226,8 +226,12 @@ if __name__ == '__main__':
     )
 
 
-# most optimal sequence length on 1d is between 15 - 20, given tech indicators lengths up to 10
+# most optimal sequence length on 1d is between 15 - 25
 # sensitivity (recall) drops down after making the model more complex (adding more layers)
+    
+# when passed candles cound > 1, check if we are still keeping our prediction, exit if not
+# more data, can lower treshold to 100 candles
+# explore 1h timeframe ?
 
 # Imbalanced Dataset: 
 # If there is a class imbalance, consider techniques like oversampling (duplicating instances of the minority class) 
