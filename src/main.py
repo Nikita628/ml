@@ -1,6 +1,6 @@
 from datetime import datetime
+from typing import List
 import os
-import sys
 from sklearn.model_selection import train_test_split
 from utils import NON_FEATURE_COLUMNS, format_date
 import numpy as np
@@ -25,7 +25,6 @@ from data_preparation import (
     create_training_data,
     create_scaler,
     normalize_data,
-    balance_dataset,
 )
 
 
@@ -33,7 +32,8 @@ def prepare_model(
         data_path: str,
         unseen_path: str,
         features_config: FeaturesConfig, 
-        training_data_config: TrainingDataConfig
+        training_data_config: TrainingDataConfig,
+        prediction_thresholds: List[float]
     ):
     
     model_dir = format_date(datetime.now())
@@ -84,16 +84,15 @@ def prepare_model(
     save_model(model=model, model_path=model_path)
 
     # evaluation
-    accuracy, report, _ = test_model(model=model, x_test=X_test, y_test=y_test)
+    model_predictions = test_model(model=model, x_test=X_test, y_test=y_test, prediction_thresholds=prediction_thresholds)
 
     write_test_report(
         title=f'data_path={data_path}\nunseen_path={unseen_path}',
-        accuracy=accuracy,
         label_percentages=label_percentages,
-        classification_report=report,
         features_config=features_config,
         training_data_config=training_data_config,
-        report_path=f'{model_dir_path}/test_report.txt'
+        report_path=f'{model_dir_path}/test_report.txt',
+        model_predictions=model_predictions,
     )
 
     test_model_on_unseen_data(
@@ -102,7 +101,8 @@ def prepare_model(
         unseen_path=unseen_path,
         report_path=f'{model_dir_path}',
         features_config=features_config,
-        training_data_config=training_data_config
+        training_data_config=training_data_config,
+        prediction_thresholds=prediction_thresholds,
     )
 
 
@@ -213,7 +213,7 @@ features_config = FeaturesConfig(
 training_data_config = TrainingDataConfig(
     sequence_length=2,
     future_candles_count=2,
-    pct_increase=5,
+    pct_increase=3,
 )
 
 if __name__ == '__main__':
@@ -222,6 +222,7 @@ if __name__ == '__main__':
         unseen_path='src/datasets_1d/unseen',
         features_config=features_config,
         training_data_config=training_data_config,
+        prediction_thresholds=[0.65, 0.7, 0.75, 0.8],
     )
 
 

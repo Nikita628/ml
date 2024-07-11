@@ -14,18 +14,36 @@ from data_preparation import (
     TrainingDataConfig,
     FeaturesConfig,
 )
-from typing import List, Any, Tuple
+from typing import List, Any
 from numpy import ndarray
+import copy
 
+class ModelPrediction:
+    def __init__(self, accuracy: float, report: str | dict, y_pred: np.ndarray, prediction_threshold: float):
+        self.accuracy = accuracy
+        self.report = report
+        self.y_pred = y_pred
+        self.prediction_threshold = prediction_threshold
 
-def test_model(model, x_test, y_test):
+    def __str__(self) -> str:
+        return (f"Prediction Threshold: {self.prediction_threshold}\n"
+                f"Accuracy: {self.accuracy}\n"
+                f"Classification Report:\n{self.report}\n")
+
+def test_model(model, x_test: ndarray, y_test: ndarray, prediction_thresholds: List[float]) -> List[ModelPrediction]:
     X = np.array(x_test)
     y_true = np.array(y_test)
-    y_pred = model.predict(X)
-    y_pred = (y_pred > 0.7).astype(int)
-    accuracy = accuracy_score(y_true, y_pred)
-    report = classification_report(y_true, y_pred)
-    return accuracy, report, y_pred
+    results = []
+    
+    for threshold in prediction_thresholds:
+        y_pred = model.predict(X)
+        y_pred = (y_pred > threshold).astype(int)
+        accuracy = accuracy_score(y_true, y_pred)
+        report = classification_report(y_true, y_pred)
+        result = ModelPrediction(accuracy, report, y_pred, threshold)
+        results.append(result)
+    
+    return results
 
 
 def test_model_on_unseen_data(
@@ -34,7 +52,8 @@ def test_model_on_unseen_data(
         unseen_path: str, 
         report_path: str, 
         features_config: FeaturesConfig,
-        training_data_config: TrainingDataConfig
+        training_data_config: TrainingDataConfig,
+        prediction_thresholds: List[float],
     ):
 
     model = load_model(model_path)
@@ -59,22 +78,25 @@ def test_model_on_unseen_data(
             collect_combined_data=True,
         )
 
-        accuracy, report, y_pred = test_model(model=model, x_test=sequences, y_test=labels)
-        tested_file = df.iloc[0]['file']
-        reports.append(f'{tested_file}\naccuracy={accuracy}\n{report}')
+        model_predictions: List[ModelPrediction] = test_model(model=model, x_test=sequences, y_test=labels, prediction_thresholds=prediction_thresholds)
 
-        report_file = f'{report_path}/{tested_file}_unseen_test_result.csv'
-        flattened_feature_columns = [f'feature_{j}' for j in range(training_data_config.sequence_length * len(feature_columns))]
-        columns = ['sequence_start_date', 'sequence_end_date', 'prediction_end_date'] \
-            + flattened_feature_columns \
-            + ['actual_label', 'predicted_label']
-        
-        for i, row in enumerate(combined_data):
-            row.append(y_pred[i])
+        for mp in model_predictions:
+            combined_data_copy = copy.deepcopy(combined_data)
+            tested_file = df.iloc[0]['file']
+            reports.append(f'{tested_file}\nprediction_treshold={mp.prediction_threshold}\naccuracy={mp.accuracy}\n{mp.report}')
 
-        combined_df = pd.DataFrame(combined_data, columns=columns)
-        combined_df.drop(columns=flattened_feature_columns, inplace=True)
-        combined_df.to_csv(report_file, index=False)
+            report_file = f'{report_path}/{tested_file}_{mp.prediction_threshold}_unseen_test_result.csv'
+            flattened_feature_columns = [f'feature_{j}' for j in range(training_data_config.sequence_length * len(feature_columns))]
+            columns = ['sequence_start_date', 'sequence_end_date', 'prediction_end_date'] \
+                + flattened_feature_columns \
+                + ['actual_label', 'predicted_label']
+            
+            for i, row in enumerate(combined_data_copy):
+                row.append(mp.y_pred[i])
+
+            combined_df = pd.DataFrame(combined_data_copy, columns=columns)
+            combined_df.drop(columns=flattened_feature_columns, inplace=True)
+            combined_df.to_csv(report_file, index=False)
 
     with open(f'{report_path}/unseen_test_report.txt', 'a') as file:
         for report in reports:
@@ -140,30 +162,30 @@ def test_ensemble_on_unseen_data(
             file.write('\n\n')
 
 
+def format_model_predictions(predictions: List[ModelPrediction]) -> str:
+    return '\n'.join(str(prediction) for prediction in predictions)
+
 def write_test_report(
         title: str,
-        accuracy: float,
         label_percentages: dict[Any, float],
-        classification_report: str | dict, 
         training_data_config: TrainingDataConfig,
         features_config: FeaturesConfig,
         report_path: str,
+        model_predictions: List[ModelPrediction]
     ):
     create_model_func_source = inspect.getsource(create_model)
 
     file_content = f"""
 {title}
 
-accuracy = {accuracy}
+model predictions:
+{format_model_predictions(model_predictions)}
 
 training data config:
 {training_data_config}
 
 label percentages:
 {label_percentages}
-
-classification report:
-{classification_report}
 
 features config:
 {features_config}
