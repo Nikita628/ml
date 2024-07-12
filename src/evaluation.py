@@ -17,6 +17,7 @@ from data_preparation import (
 from typing import List, Any
 from numpy import ndarray
 import copy
+from keras import models
 
 class ModelPrediction:
     def __init__(self, accuracy: float, report: str | dict, y_pred: np.ndarray, prediction_threshold: float):
@@ -30,7 +31,7 @@ class ModelPrediction:
                 f"Accuracy: {self.accuracy}\n"
                 f"Classification Report:\n{self.report}\n")
 
-def test_model(model, x_test: ndarray, y_test: ndarray, prediction_thresholds: List[float]) -> List[ModelPrediction]:
+def test_model(model: models.Sequential, x_test: ndarray, y_test: ndarray, prediction_thresholds: List[float]) -> List[ModelPrediction]:
     X = np.array(x_test)
     y_true = np.array(y_test)
     results = []
