@@ -232,6 +232,7 @@ if __name__ == '__main__':
 # when passed candles cound > 1, check if we are still keeping our prediction, exit if not
 # more data, can lower treshold to 100 candles
 # explore 1h timeframe ?
+# enter only when current close is below the previous close
 
 # Imbalanced Dataset: 
 # If there is a class imbalance, consider techniques like oversampling (duplicating instances of the minority class) 
