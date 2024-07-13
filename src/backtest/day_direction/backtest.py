@@ -37,7 +37,7 @@ training_data_config = TrainingDataConfig(
     prediction_type=PredictionType.next_close_direction
 )
 
-CANDLE_LIMIT = 25
+CANDLE_LIMIT = 30
 PREDICTION_THRESHOLD = 0.75
 LAST_CLOSE_DECREASE = 0.01
 MAX_CANDLES = 2
