@@ -1,0 +1,104 @@
+
+data_path=src/datasets_12h/small
+unseen_path=src/datasets_12h/unseen
+
+model predictions:
+Prediction Threshold: 0.65
+Accuracy: 0.5399300887335305
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.54      0.99      0.70      2010
+           1       0.45      0.01      0.01      1709
+
+    accuracy                           0.54      3719
+   macro avg       0.50      0.50      0.36      3719
+weighted avg       0.50      0.54      0.38      3719
+
+
+Prediction Threshold: 0.7
+Accuracy: 0.5404678677063727
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.54      1.00      0.70      2010
+           1       0.50      0.00      0.00      1709
+
+    accuracy                           0.54      3719
+   macro avg       0.52      0.50      0.35      3719
+weighted avg       0.52      0.54      0.38      3719
+
+
+Prediction Threshold: 0.75
+Accuracy: 0.5407367571927938
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.54      1.00      0.70      2010
+           1       0.67      0.00      0.00      1709
+
+    accuracy                           0.54      3719
+   macro avg       0.60      0.50      0.35      3719
+weighted avg       0.60      0.54      0.38      3719
+
+
+Prediction Threshold: 0.8
+Accuracy: 0.5407367571927938
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.54      1.00      0.70      2010
+           1       1.00      0.00      0.00      1709
+
+    accuracy                           0.54      3719
+   macro avg       0.77      0.50      0.35      3719
+weighted avg       0.75      0.54      0.38      3719
+
+
+
+training data config:
+SequencesLabelsConfig(
+  sequence_length=10,
+  future_candles_count=3,
+  atr_multiple=1.0,
+  atr_length=7,
+  pct_increase=2.5,
+  prediction_type=PredictionType.next_close_direction,
+)
+
+label percentages:
+{0: 54.03399311531841, 1: 45.96600688468158}
+
+features config:
+FeaturesConfig(
+  sma_lengths=[],
+  ema_lengths=[],
+  rsi_lengths=[],
+  stoch_k_lengths=[],
+  stoch_d_lengths=[],
+  stoch_k_smooth=[],
+  mfi_lengths=[],
+  adx_lengths=[],
+  atr_lengths=[],
+  std_lengths=[]
+  bb_lengths=[]
+  ichimoku=[]
+  bb_stds=[]
+)
+
+model config:
+def create_model(input_shape: tuple[int, int]) -> models.Sequential:
+    model = models.Sequential()
+    model.add(layers.Bidirectional(layers.LSTM(units=100, return_sequences=True), input_shape=input_shape))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Bidirectional(layers.LSTM(units=100, return_sequences=True)))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Bidirectional(layers.LSTM(units=100, return_sequences=True)))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Bidirectional(layers.LSTM(units=100)))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Dense(units=1, activation='sigmoid'))
+    optimizer = optimizers.Adam(learning_rate=0.001, clipvalue=1.0)
+    model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+

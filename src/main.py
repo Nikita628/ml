@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 import os
 from sklearn.model_selection import train_test_split
-from utils import NON_FEATURE_COLUMNS, format_date
+from utils import NON_FEATURE_COLUMNS, format_date, PredictionType
 import numpy as np
 from sklearn.metrics import accuracy_score, classification_report
 from modeling import (
@@ -212,8 +212,9 @@ features_config = FeaturesConfig(
 )
 training_data_config = TrainingDataConfig(
     sequence_length=2,
-    future_candles_count=2,
-    pct_increase=3,
+    # future_candles_count=2,
+    # pct_increase=3,
+    prediction_type=PredictionType.next_close_direction
 )
 
 if __name__ == '__main__':
