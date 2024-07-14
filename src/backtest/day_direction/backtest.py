@@ -62,6 +62,10 @@ def log_error(message):
     with open("./src/backtest/day_direction/trading_errors.log", "a") as log_file:
         log_file.write(f"{datetime.datetime.now()} - ERROR - {message}\n")
 
+def log_possible_next_up(coin, opening_candle_date, probability):
+    with open("./src/backtest/day_direction/possible_next_up.log", "a") as log_file:
+        log_file.write(f"{coin} opening candle: {opening_candle_date} proba: {probability}\n")
+
 def process_data(candles):
     df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
     
@@ -78,12 +82,12 @@ def process_data(candles):
 
     return sequences
 
-def should_enter(data, coin):
+def should_enter(data, coin, opening_candle_date):
     prediction = model.predict(x=data, verbose=0)
     y_pred = prediction[0][0]
 
     if y_pred > 0.7:
-        print (f'{coin}: {y_pred}')
+        log_possible_next_up(coin, opening_candle_date, y_pred)
 
     return y_pred > PREDICTION_THRESHOLD
 
@@ -121,12 +125,11 @@ def start_trading():
                     continue
                 
                 candles = exchange.fetch_ohlcv(coin, timeframe=TIMEFRAME, limit=CANDLE_LIMIT)
-                processed_data = process_data(candles)           
-                is_enter = should_enter(processed_data, coin)
-                
+                processed_data = process_data(candles)     
+                opening_candle_date = datetime.datetime.fromtimestamp(candles[-1][0] / 1000, datetime.UTC).strftime("%Y-%m-%d %H:%M:%S")      
+                is_enter = should_enter(processed_data, coin, opening_candle_date)
                 current_price = candles[-1][4]
                 last_close_price = candles[-2][4]
-                opening_candle_date = datetime.datetime.fromtimestamp(candles[-1][0] / 1000, datetime.UTC).strftime("%Y-%m-%d %H:%M:%S")
                 is_below_prev_close = (current_price - last_close_price) / last_close_price < (-LAST_CLOSE_DECREASE) # current price dipped below last close by a certain %
                 
                 if is_enter and is_below_prev_close:
