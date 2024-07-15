@@ -8,7 +8,6 @@ from keras import optimizers
 from keras import callbacks
 # import keras_tuner as kt
 
-
 def create_model(input_shape: tuple[int, int]) -> models.Sequential:
     model = models.Sequential()
     model.add(layers.Bidirectional(layers.LSTM(units=100, return_sequences=True), input_shape=input_shape))
@@ -23,6 +22,22 @@ def create_model(input_shape: tuple[int, int]) -> models.Sequential:
     optimizer = optimizers.Adam(learning_rate=0.001, clipvalue=1.0)
     model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
     return model
+
+# def create_model(input_shape: tuple[int, int]) -> models.Sequential:
+#     model = models.Sequential()
+#     model.add(layers.InputLayer(shape=input_shape))
+#     model.add(layers.LSTM(units=100, return_sequences=True))
+#     model.add(layers.Dropout(0.2))
+#     model.add(layers.LSTM(units=100, return_sequences=True))
+#     model.add(layers.Dropout(0.2))
+#     model.add(layers.LSTM(units=100, return_sequences=True))
+#     model.add(layers.Dropout(0.2))
+#     model.add(layers.LSTM(units=100))
+#     model.add(layers.Dropout(0.2))
+#     model.add(layers.Dense(units=1, activation='sigmoid'))
+#     optimizer = optimizers.Adam(learning_rate=0.001, clipvalue=1.0)
+#     model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+#     return model
 
 
 def get_callbacks():
