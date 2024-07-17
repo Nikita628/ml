@@ -1,0 +1,60 @@
+LEVER_USDT.csv
+accuracy=0.7616279069767442
+              precision    recall  f1-score   support
+
+           0       0.72      0.96      0.82      2374
+           1       0.89      0.50      0.64      1754
+
+    accuracy                           0.76      4128
+   macro avg       0.81      0.73      0.73      4128
+weighted avg       0.79      0.76      0.74      4128
+
+
+RNDR_USDT.csv
+accuracy=0.7262966333030028
+              precision    recall  f1-score   support
+
+           0       0.67      0.95      0.79      2949
+           1       0.90      0.46      0.61      2546
+
+    accuracy                           0.73      5495
+   macro avg       0.78      0.71      0.70      5495
+weighted avg       0.78      0.73      0.71      5495
+
+
+OGN_USDT.csv
+accuracy=0.7629883624272652
+              precision    recall  f1-score   support
+
+           0       0.71      0.96      0.81      5229
+           1       0.91      0.53      0.67      4395
+
+    accuracy                           0.76      9624
+   macro avg       0.81      0.74      0.74      9624
+weighted avg       0.80      0.76      0.75      9624
+
+
+XNO_USDT.csv
+accuracy=0.8186609408549678
+              precision    recall  f1-score   support
+
+           0       0.80      0.98      0.88      3487
+           1       0.90      0.48      0.63      1636
+
+    accuracy                           0.82      5123
+   macro avg       0.85      0.73      0.76      5123
+weighted avg       0.83      0.82      0.80      5123
+
+
+LINA_USDT.csv
+accuracy=0.8062125961812482
+              precision    recall  f1-score   support
+
+           0       0.75      0.96      0.84      3851
+           1       0.93      0.62      0.74      3167
+
+    accuracy                           0.81      7018
+   macro avg       0.84      0.79      0.79      7018
+weighted avg       0.83      0.81      0.80      7018
+
+

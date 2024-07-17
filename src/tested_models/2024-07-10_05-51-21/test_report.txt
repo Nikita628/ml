@@ -1,0 +1,63 @@
+
+data_path=src/datasets_4h/largeX2
+unseen_path=src/datasets_4h/unseen
+
+accuracy = 0.7491606131446412
+
+training data config:
+SequencesLabelsConfig(
+  sequence_length=30,
+  future_candles_count=6,
+  atr_multiple=1.0,
+  atr_length=7,
+  pct_increase=2.5,
+  prediction_type=PredictionType.pct_increase,
+)
+
+label percentages:
+{1: 38.52307137141692, 0: 61.47692862858308}
+
+classification report:
+              precision    recall  f1-score   support
+
+           0       0.73      0.95      0.82    470203
+           1       0.85      0.43      0.57    294641
+
+    accuracy                           0.75    764844
+   macro avg       0.79      0.69      0.70    764844
+weighted avg       0.77      0.75      0.72    764844
+
+
+features config:
+FeaturesConfig(
+  sma_lengths=[],
+  ema_lengths=[],
+  rsi_lengths=[],
+  stoch_k_lengths=[],
+  stoch_d_lengths=[],
+  stoch_k_smooth=[],
+  mfi_lengths=[],
+  adx_lengths=[],
+  atr_lengths=[],
+  std_lengths=[]
+  bb_lengths=[]
+  ichimoku=[]
+  bb_stds=[]
+)
+
+model config:
+def create_model(input_shape: tuple[int, int]) -> models.Sequential:
+    model = models.Sequential()
+    model.add(layers.Bidirectional(layers.LSTM(units=100, return_sequences=True), input_shape=input_shape))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Bidirectional(layers.LSTM(units=100, return_sequences=True)))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Bidirectional(layers.LSTM(units=100, return_sequences=True)))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Bidirectional(layers.LSTM(units=100)))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Dense(units=1, activation='sigmoid'))
+    optimizer = optimizers.Adam(learning_rate=0.001, clipvalue=1.0)
+    model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+
