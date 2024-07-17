@@ -44,13 +44,13 @@ PROFIT_THRESHOLD = 0.02
 MAX_CANDLES = 6
 SLEEP_INTERVAL = 1
 MONITOR_INTERVAL = 10
-TRADES_FILE = './src/backtest/trades.csv'
+TRADES_FILE = './src/backtest/h4_future_6/trades.csv'
 TIMEFRAME = '4h'
 
-MODEL_PATH = './src/backtest/model.h5'
+MODEL_PATH = './src/backtest/h4_future_6/model.h5'
 model = load_model(model_path=MODEL_PATH)
 
-SCALER_PATH = './src/backtest/scaler.pkl'
+SCALER_PATH = './src/backtest/h4_future_6/scaler.pkl'
 scaler = load_scaler(scaler_file=SCALER_PATH)
 
 exchange = ccxt.binance()
@@ -60,7 +60,7 @@ active_usdt_coins = [coin for coin in markets if markets[coin]['active'] and coi
 
 def log_error(message):
     print(f"{datetime.datetime.now()} - ERROR - {message}\n")
-    with open("./src/backtest/trading_errors.log", "a") as log_file:
+    with open("./src/backtest/h4_future_6/trading_errors.log", "a") as log_file:
         log_file.write(f"{datetime.datetime.now()} - ERROR - {message}\n")
 
 def process_data(candles):
