@@ -6,9 +6,11 @@ from keras import models
 from keras import layers
 from keras import optimizers
 from keras import callbacks
+from sklearn.utils.class_weight import compute_class_weight
 # import keras_tuner as kt
 
 def create_model(input_shape: tuple[int, int]) -> models.Sequential:
+    # add normalization layers
     model = models.Sequential()
     model.add(layers.Bidirectional(layers.LSTM(units=100, return_sequences=True), input_shape=input_shape))
     model.add(layers.Dropout(0.2))
@@ -53,10 +55,18 @@ def load_model(model_path='model.h5') -> models.Sequential:
         raise Exception(f'{model_path} does not exist')
 
 
-def train_model(model: models.Sequential, x_train, y_train, epochs=100, batch_size=32):
+def train_model(model: models.Sequential, x_train, y_train, epochs=100, batch_size=32, balanced=False):
+    class_weights_dict = None
+
+    if balanced:
+        class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(y_train), y=y_train)
+        class_weights_dict = {i: class_weights[i] for i in range(len(class_weights))}
+        print(f'class weights: {class_weights_dict}')
+
     X = np.array(x_train)
     y = np.array(y_train)
-    model.fit(X, y, epochs=epochs, batch_size=batch_size, validation_split=0.1, callbacks=get_callbacks()) 
+    model.fit(X, y, epochs=epochs, batch_size=batch_size, 
+              validation_split=0.1, callbacks=get_callbacks(), class_weight=class_weights_dict) 
     return model
 
 

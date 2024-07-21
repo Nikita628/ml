@@ -33,7 +33,8 @@ def prepare_model(
         unseen_path: str,
         features_config: FeaturesConfig, 
         training_data_config: TrainingDataConfig,
-        prediction_thresholds: List[float]
+        prediction_thresholds: List[float],
+        balanced: bool = False,
     ):
     
     model_dir = format_date(datetime.now())
@@ -79,7 +80,7 @@ def prepare_model(
         random_state=42, 
         stratify=labels
     )
-    model = train_model(model=model, x_train=X_train, y_train=y_train)
+    model = train_model(model=model, x_train=X_train, y_train=y_train, balanced=balanced)
     model_path = f'{model_dir_path}/model.h5'
     save_model(model=model, model_path=model_path)
 
@@ -212,9 +213,9 @@ features_config = FeaturesConfig(
 )
 training_data_config = TrainingDataConfig(
     sequence_length=2,
-    # future_candles_count=2,
-    # pct_increase=3,
-    prediction_type=PredictionType.next_close_direction
+    future_candles_count=2,
+    pct_increase=10,
+    prediction_type=PredictionType.pct_increase
 )
 
 if __name__ == '__main__':
@@ -224,6 +225,7 @@ if __name__ == '__main__':
         features_config=features_config,
         training_data_config=training_data_config,
         prediction_thresholds=[0.65, 0.7, 0.75, 0.8],
+        balanced=True
     )
 
 
