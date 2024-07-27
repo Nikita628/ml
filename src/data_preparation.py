@@ -292,6 +292,14 @@ def create_training_data(
             sequence_length=config.sequence_length,
             collect_combined_data=collect_combined_data,
         )
+    elif config.prediction_type == PredictionType.pct_change:
+        return create_training_data_percentage_change(
+            dfs=dfs,
+            feature_columns=feature_columns,
+            future_candles=config.future_candles_count,
+            sequence_length=config.sequence_length,
+            collect_combined_data=collect_combined_data,
+        )
     
     raise Exception(f'Invalid prediction type {config.prediction_type}')
 
@@ -359,6 +367,35 @@ def create_training_data_percentage_increase(
             prediction_end_date = df['timestamp'].iloc[i + sequence_length + future_candles - 1]
             if collect_combined_data:
                 combined_row = [sequence_start_date, sequence_end_date, prediction_end_date] + sequence.flatten().tolist() + [label]
+                combined_data.append(combined_row)
+     
+    return np.array(sequences), np.array(labels), combined_data
+
+def create_training_data_percentage_change(
+        dfs: List[pd.DataFrame], 
+        sequence_length: int, 
+        feature_columns: List[str], 
+        future_candles=3, 
+        collect_combined_data: bool = False,
+    ) -> Tuple[ndarray, ndarray, List]:
+
+    sequences = []
+    labels = []
+    combined_data = []
+
+    for df in dfs:
+        for i in range(len(df) - sequence_length - future_candles):
+            sequence = df[feature_columns].iloc[i:i+sequence_length].values
+            future_close = df['close'].iloc[i+sequence_length+future_candles-1]
+            current_close = df['close'].iloc[i+sequence_length-1]
+            percentage_change = ((future_close - current_close) / current_close) * 100
+            sequences.append(sequence)
+            labels.append(percentage_change)
+            sequence_start_date = df['timestamp'].iloc[i]
+            sequence_end_date = df['timestamp'].iloc[i + sequence_length - 1]
+            prediction_end_date = df['timestamp'].iloc[i + sequence_length + future_candles - 1]
+            if collect_combined_data:
+                combined_row = [sequence_start_date, sequence_end_date, prediction_end_date] + sequence.flatten().tolist() + [percentage_change]
                 combined_data.append(combined_row)
      
     return np.array(sequences), np.array(labels), combined_data

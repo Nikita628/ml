@@ -9,12 +9,17 @@ from modeling import (
     create_model,
     train_model,
     save_model,
+    create_regression_model,
+    train_regression_model,
 )
 from evaluation import (
     test_model,
     test_model_on_unseen_data,
     write_test_report,
     test_ensemble_on_unseen_data,
+    test_regression_model,
+    test_regression_model_on_unseen_data,
+    write_regression_test_report,
 )
 from data_preparation import (
     FeaturesConfig, 
@@ -104,6 +109,76 @@ def prepare_model(
         features_config=features_config,
         training_data_config=training_data_config,
         prediction_thresholds=prediction_thresholds,
+    )
+
+def prepare_regression_model(
+        data_path: str,
+        unseen_path: str,
+        features_config: FeaturesConfig, 
+        training_data_config: TrainingDataConfig,
+    ):
+    
+    model_dir = format_date(datetime.now())
+    model_dir_path = f'src/tested_models/{model_dir}'
+    os.makedirs(model_dir_path, exist_ok=True)
+
+    # data preprocessing
+    dataframes = load_data(data_path)
+    dataframes = add_features(dataframes, features_config)
+
+    feature_columns = [col for col in dataframes[0].columns if col not in NON_FEATURE_COLUMNS]
+    
+    scaler_path = f'{model_dir_path}/scaler.pkl'
+    scaler = create_scaler(
+        dfs=dataframes, 
+        columns_to_normalize=feature_columns, 
+        scaler_path=scaler_path
+    )
+
+    dataframes = normalize_data(
+        dfs=dataframes, 
+        scaler=scaler, 
+        columns_to_normalize=feature_columns
+    )
+
+    sequences, labels, _ = create_training_data(
+        dfs=dataframes, 
+        feature_columns=feature_columns, 
+        config=training_data_config
+    )
+
+    # modeling
+    input_shape = (training_data_config.sequence_length, len(feature_columns))
+    model = create_regression_model(input_shape=input_shape)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        sequences, 
+        labels, 
+        test_size=0.2, 
+        random_state=42,
+    )
+    model = train_regression_model(model=model, x_train=X_train, y_train=y_train)
+    model_path = f'{model_dir_path}/model.h5'
+    save_model(model=model, model_path=model_path)
+
+    # evaluation
+    model_prediction = test_regression_model(model=model, x_test=X_test, y_test=y_test)
+
+    write_regression_test_report(
+        title=f'data_path={data_path}\nunseen_path={unseen_path}',
+        features_config=features_config,
+        training_data_config=training_data_config,
+        report_path=f'{model_dir_path}/test_report.txt',
+        model_prediction=model_prediction,
+    )
+
+    test_regression_model_on_unseen_data(
+        model_path=model_path, 
+        scaler_path=scaler_path, 
+        unseen_path=unseen_path,
+        report_path=f'{model_dir_path}',
+        features_config=features_config,
+        training_data_config=training_data_config,
     )
 
 
@@ -212,20 +287,17 @@ features_config = FeaturesConfig(
     ichimoku=[],
 )
 training_data_config = TrainingDataConfig(
-    sequence_length=2,
-    future_candles_count=2,
-    pct_increase=10,
-    prediction_type=PredictionType.pct_increase
+    sequence_length=10,
+    future_candles_count=1,
+    prediction_type=PredictionType.pct_change
 )
 
 if __name__ == '__main__':
-    prepare_model(
+    prepare_regression_model(
         data_path='src/datasets_1d/small',
         unseen_path='src/datasets_1d/unseen',
         features_config=features_config,
         training_data_config=training_data_config,
-        prediction_thresholds=[0.65, 0.7, 0.75, 0.8],
-        balanced=True
     )
 
 

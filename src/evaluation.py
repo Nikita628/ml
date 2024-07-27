@@ -3,7 +3,7 @@ import numpy as np
 from typing import Any
 from sklearn.metrics import accuracy_score, classification_report
 import inspect
-from modeling import create_model, load_model
+from modeling import create_model, load_model, create_regression_model
 from utils import NON_FEATURE_COLUMNS
 from data_preparation import (
     load_data, 
@@ -18,6 +18,7 @@ from typing import List, Any
 from numpy import ndarray
 import copy
 from keras import models
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 class ModelPrediction:
     def __init__(self, accuracy: float, report: str | dict, y_pred: np.ndarray, prediction_threshold: float):
@@ -46,6 +47,24 @@ def test_model(model: models.Sequential, x_test: ndarray, y_test: ndarray, predi
     
     return results
 
+class RegressionModelPrediction:
+    def __init__(self, mse: float, mae: float, y_pred: np.ndarray):
+        self.mse = mse
+        self.mae = mae
+        self.y_pred = y_pred
+
+    def __str__(self) -> str:
+        return (f"Mean Squared Error: {self.mse}\n"
+                f"Mean Absolute Error: {self.mae}\n")
+
+def test_regression_model(model: models.Sequential, x_test: np.ndarray, y_test: np.ndarray) -> RegressionModelPrediction:
+    X = np.array(x_test)
+    y_true = np.array(y_test)  
+    y_pred = model.predict(X).flatten()  
+    mse = mean_squared_error(y_true, y_pred)
+    mae = mean_absolute_error(y_true, y_pred)
+    result = RegressionModelPrediction(mse, mae, y_pred)
+    return result
 
 def test_model_on_unseen_data(
         model_path: str, 
@@ -98,6 +117,62 @@ def test_model_on_unseen_data(
             combined_df = pd.DataFrame(combined_data_copy, columns=columns)
             combined_df.drop(columns=flattened_feature_columns, inplace=True)
             combined_df.to_csv(report_file, index=False)
+
+    with open(f'{report_path}/unseen_test_report.txt', 'a') as file:
+        for report in reports:
+            file.write(report)
+            file.write('\n\n')
+
+
+def test_regression_model_on_unseen_data(
+        model_path: str, 
+        scaler_path: str, 
+        unseen_path: str, 
+        report_path: str, 
+        features_config: FeaturesConfig,
+        training_data_config: TrainingDataConfig,
+    ):
+
+    model = load_model(model_path)
+    scaler = load_scaler(scaler_path)
+    dataframes = load_data(unseen_path)
+    dataframes = add_features(dataframes, features_config)
+
+    feature_columns = [col for col in dataframes[0].columns if col not in NON_FEATURE_COLUMNS]
+    reports = []
+
+    for df in dataframes:
+        df = normalize_data(
+            dfs=[df], 
+            scaler=scaler, 
+            columns_to_normalize=feature_columns
+        )[0]
+
+        sequences, labels, combined_data = create_training_data(
+            dfs=[df], 
+            feature_columns=feature_columns, 
+            config=training_data_config,
+            collect_combined_data=True,
+        )
+
+        mp: RegressionModelPrediction = test_regression_model(model=model, x_test=sequences, y_test=labels)
+
+        combined_data_copy = copy.deepcopy(combined_data)
+        tested_file = df.iloc[0]['file']
+        reports.append(f'{tested_file}\nMAE={mp.mae}\nMSE={mp.mse}')
+
+        report_file = f'{report_path}/{tested_file}_unseen_test_result.csv'
+        flattened_feature_columns = [f'feature_{j}' for j in range(training_data_config.sequence_length * len(feature_columns))]
+        columns = ['sequence_start_date', 'sequence_end_date', 'prediction_end_date'] \
+                + flattened_feature_columns \
+                + ['actual_label', 'predicted_label']
+            
+        for i, row in enumerate(combined_data_copy):
+            row.append(mp.y_pred[i])
+
+        combined_df = pd.DataFrame(combined_data_copy, columns=columns)
+        combined_df.drop(columns=flattened_feature_columns, inplace=True)
+        combined_df.to_csv(report_file, index=False)
 
     with open(f'{report_path}/unseen_test_report.txt', 'a') as file:
         for report in reports:
@@ -187,6 +262,34 @@ training data config:
 
 label percentages:
 {label_percentages}
+
+features config:
+{features_config}
+
+model config:
+{create_model_func_source}
+"""
+
+    with open(report_path, 'w') as file:
+        file.write(file_content)
+
+def write_regression_test_report(
+        title: str,
+        training_data_config: TrainingDataConfig,
+        features_config: FeaturesConfig,
+        report_path: str,
+        model_prediction: RegressionModelPrediction
+    ):
+    create_model_func_source = inspect.getsource(create_regression_model)
+
+    file_content = f"""
+{title}
+
+model predictions:
+{model_prediction}
+
+training data config:
+{training_data_config}
 
 features config:
 {features_config}
