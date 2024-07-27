@@ -9,8 +9,8 @@ from keras import callbacks
 from sklearn.utils.class_weight import compute_class_weight
 # import keras_tuner as kt
 
+# add normalization layers
 def create_model(input_shape: tuple[int, int]) -> models.Sequential:
-    # add normalization layers
     model = models.Sequential()
     model.add(layers.Bidirectional(layers.LSTM(units=100, return_sequences=True), input_shape=input_shape))
     model.add(layers.Dropout(0.2))
@@ -23,6 +23,21 @@ def create_model(input_shape: tuple[int, int]) -> models.Sequential:
     model.add(layers.Dense(units=1, activation='sigmoid'))
     optimizer = optimizers.Adam(learning_rate=0.001, clipvalue=1.0)
     model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+
+def create_regression_model(input_shape: tuple[int, int]) -> models.Sequential:
+    model = models.Sequential()
+    model.add(layers.Bidirectional(layers.LSTM(units=100, return_sequences=True), input_shape=input_shape))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Bidirectional(layers.LSTM(units=100, return_sequences=True)))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Bidirectional(layers.LSTM(units=100, return_sequences=True)))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Bidirectional(layers.LSTM(units=100)))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Dense(units=1, activation='linear'))
+    optimizer = optimizers.Adam(learning_rate=0.001, clipvalue=1.0)
+    model.compile(optimizer=optimizer, loss='mean_squared_error', metrics=['mean_absolute_error'])
     return model
 
 # def create_model(input_shape: tuple[int, int]) -> models.Sequential:
@@ -67,6 +82,13 @@ def train_model(model: models.Sequential, x_train, y_train, epochs=100, batch_si
     y = np.array(y_train)
     model.fit(X, y, epochs=epochs, batch_size=batch_size, 
               validation_split=0.1, callbacks=get_callbacks(), class_weight=class_weights_dict) 
+    return model
+
+def train_regression_model(model: models.Sequential, x_train, y_train, epochs=100, batch_size=32):
+    X = np.array(x_train)
+    y = np.array(y_train)
+    model.fit(X, y, epochs=epochs, batch_size=batch_size, 
+              validation_split=0.1, callbacks=get_callbacks()) 
     return model
 
 
