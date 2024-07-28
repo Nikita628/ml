@@ -287,15 +287,15 @@ features_config = FeaturesConfig(
     ichimoku=[],
 )
 training_data_config = TrainingDataConfig(
-    sequence_length=10,
+    sequence_length=35,
     future_candles_count=1,
     prediction_type=PredictionType.pct_change
 )
 
 if __name__ == '__main__':
     prepare_regression_model(
-        data_path='src/datasets_1d/small',
-        unseen_path='src/datasets_1d/unseen',
+        data_path='src/datasets_12h/largeX2',
+        unseen_path='src/datasets_12h/unseen',
         features_config=features_config,
         training_data_config=training_data_config,
     )
