@@ -30,6 +30,8 @@ from data_preparation import (
     create_training_data,
     create_scaler,
     normalize_data,
+    create_regression_scaler,
+    normalize_regression_data,
 )
 
 
@@ -128,23 +130,21 @@ def prepare_regression_model(
 
     feature_columns = [col for col in dataframes[0].columns if col not in NON_FEATURE_COLUMNS]
     
-    scaler_path = f'{model_dir_path}/scaler.pkl'
-    scaler = create_scaler(
-        dfs=dataframes, 
-        columns_to_normalize=feature_columns, 
-        scaler_path=scaler_path
-    )
-
-    dataframes = normalize_data(
-        dfs=dataframes, 
-        scaler=scaler, 
-        columns_to_normalize=feature_columns
-    )
-
     sequences, labels, _ = create_training_data(
         dfs=dataframes, 
         feature_columns=feature_columns, 
         config=training_data_config
+    )
+
+    scaler_path = f'{model_dir_path}/scaler.pkl'
+    scaler = create_regression_scaler(
+        data=sequences, 
+        scaler_path=scaler_path
+    )
+
+    sequences = normalize_regression_data(
+        data=sequences, 
+        scaler=scaler, 
     )
 
     # modeling
