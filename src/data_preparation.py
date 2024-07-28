@@ -213,6 +213,20 @@ def create_scaler(dfs, columns_to_normalize, scaler_path='scaler.pkl') -> Standa
         pickle.dump(scaler, f)
     return scaler
 
+def create_regression_scaler(data: ndarray, scaler_path='scaler.pkl') -> StandardScaler:
+    num_samples, sequence_length, num_features = data.shape
+    data_2d = data.reshape(-1, num_features)
+    scaler = StandardScaler()
+    scaler.fit(data_2d)
+    with open(scaler_path, 'wb') as f:
+        pickle.dump(scaler, f)
+    return scaler
+
+def normalize_regression_data(data: ndarray, scaler: StandardScaler) -> ndarray:
+    num_samples, sequence_length, num_features = data.shape
+    data_2d = data.reshape(-1, num_features)
+    normalized = scaler.transform(data_2d)
+    return normalized.reshape(num_samples, sequence_length, num_features)
 
 def normalize_data(dfs: List[pd.DataFrame], scaler: StandardScaler, columns_to_normalize: List[str]) -> List[pd.DataFrame]:
     for df in dfs:

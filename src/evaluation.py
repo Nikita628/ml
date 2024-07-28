@@ -13,6 +13,7 @@ from data_preparation import (
     create_training_data,
     TrainingDataConfig,
     FeaturesConfig,
+    normalize_regression_data,
 )
 from typing import List, Any
 from numpy import ndarray
@@ -142,17 +143,16 @@ def test_regression_model_on_unseen_data(
     reports = []
 
     for df in dataframes:
-        df = normalize_data(
-            dfs=[df], 
-            scaler=scaler, 
-            columns_to_normalize=feature_columns
-        )[0]
-
         sequences, labels, combined_data = create_training_data(
             dfs=[df], 
             feature_columns=feature_columns, 
             config=training_data_config,
             collect_combined_data=True,
+        )
+
+        sequences = normalize_regression_data(
+            data=sequences, 
+            scaler=scaler, 
         )
 
         mp: RegressionModelPrediction = test_regression_model(model=model, x_test=sequences, y_test=labels)
