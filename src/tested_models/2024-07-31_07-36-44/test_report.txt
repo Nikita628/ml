@@ -1,0 +1,52 @@
+
+data_path=src/datasets_1d/largeX2
+unseen_path=src/datasets_1d/unseen
+
+model predictions:
+Mean Squared Error: 1178636812.770116
+Mean Absolute Error: 152.47780305061735
+
+
+training data config:
+SequencesLabelsConfig(
+  sequence_length=10,
+  future_candles_count=1,
+  atr_multiple=1.0,
+  atr_length=7,
+  pct_increase=2.5,
+  prediction_type=PredictionType.pct_change,
+)
+
+features config:
+FeaturesConfig(
+  sma_lengths=[],
+  ema_lengths=[],
+  rsi_lengths=[],
+  stoch_k_lengths=[],
+  stoch_d_lengths=[],
+  stoch_k_smooth=[],
+  mfi_lengths=[],
+  adx_lengths=[],
+  atr_lengths=[],
+  std_lengths=[]
+  bb_lengths=[]
+  ichimoku=[]
+  bb_stds=[]
+)
+
+model config:
+def create_regression_model(input_shape: tuple[int, int]) -> models.Sequential:
+    model = models.Sequential()
+    model.add(layers.Bidirectional(layers.LSTM(units=5, return_sequences=True), input_shape=input_shape))
+    model.add(layers.Dropout(0.2))
+    # model.add(layers.Bidirectional(layers.LSTM(units=100, return_sequences=True)))
+    # model.add(layers.Dropout(0.2))
+    model.add(layers.Bidirectional(layers.LSTM(units=5, return_sequences=True)))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Bidirectional(layers.LSTM(units=5)))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Dense(units=1, activation='linear'))
+    optimizer = optimizers.Adam(learning_rate=0.001, clipvalue=1.0)
+    model.compile(optimizer=optimizer, loss='mean_squared_error', metrics=['mean_absolute_error'])
+    return model
+
